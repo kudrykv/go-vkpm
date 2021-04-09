@@ -2,6 +2,7 @@ package commands
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -12,17 +13,31 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+const (
+	fDomain  = "domain"
+	fDefProj = "default-project"
+)
+
+var (
+	errNoConfigInCtx = errors.New("no config in ctx")
+	errNoDirInCtx    = errors.New("no dir in ctx")
+)
+
 func Config() *cli.Command {
 	return &cli.Command{
 		Name: "config",
+		Flags: []cli.Flag{
+			&cli.StringFlag{Name: fDomain},
+			&cli.StringFlag{Name: fDefProj},
+		},
 
 		Before: func(ctx *cli.Context) error {
-			path, err := EnsureConfigDir()
-			if err != nil {
-				return fmt.Errorf("ensure config dir: %w", err)
+			dir, ok := ctx.Context.Value(types.Dir).(string)
+			if !ok {
+				return errNoDirInCtx
 			}
 
-			config, err := ReadConfig(path, "config.yml")
+			config, err := ReadConfig(dir, "config.yml")
 			if err != nil {
 				return fmt.Errorf("read config: %w", err)
 			}
@@ -33,28 +48,31 @@ func Config() *cli.Command {
 		},
 
 		Action: func(ctx *cli.Context) error {
-			value := ctx.Context.Value("test").(types.Config)
+			cfg, ok := ctx.Context.Value(types.Cfg).(types.Config)
+			if !ok {
+				return errNoConfigInCtx
+			}
 
-			fmt.Println(value)
+			dir, ok := ctx.Context.Value(types.Dir).(string)
+			if !ok {
+				return errNoDirInCtx
+			}
+
+			if domain := ctx.String(fDomain); len(domain) > 0 {
+				cfg.Domain = domain
+			}
+
+			if defProj := ctx.String(fDefProj); len(defProj) > 0 {
+				cfg.DefaultProject = defProj
+			}
+
+			if err := WriteConfig(dir, "config.yml", cfg); err != nil {
+				return fmt.Errorf("write config: %w", err)
+			}
 
 			return nil
 		},
 	}
-}
-
-func EnsureConfigDir() (string, error) {
-	homeDir, err := os.UserHomeDir()
-	if err != nil {
-		return "", fmt.Errorf("user home dir: %w", err)
-	}
-
-	configRoot := strings.Join([]string{homeDir, ".config", "vkpm"}, string(os.PathSeparator))
-
-	if err = os.MkdirAll(configRoot, os.ModePerm); err != nil {
-		return "", fmt.Errorf("mkdir all: %w", err)
-	}
-
-	return configRoot, nil
 }
 
 func ReadConfig(path, file string) (types.Config, error) {
@@ -69,4 +87,17 @@ func ReadConfig(path, file string) (types.Config, error) {
 	}
 
 	return authConfig, nil
+}
+
+func WriteConfig(path, file string, config types.Config) error {
+	bts, err := yaml.Marshal(config)
+	if err != nil {
+		return fmt.Errorf("marshal: %w", err)
+	}
+
+	if err = ioutil.WriteFile(strings.Join([]string{path, file}, string(os.PathSeparator)), bts, 0600); err != nil {
+		return fmt.Errorf("write file: %w", err)
+	}
+
+	return nil
 }
