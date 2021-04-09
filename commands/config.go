@@ -1,7 +1,6 @@
 package commands
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -29,22 +28,6 @@ func Config() *cli.Command {
 		Flags: []cli.Flag{
 			&cli.StringFlag{Name: fDomain},
 			&cli.StringFlag{Name: fDefProj},
-		},
-
-		Before: func(ctx *cli.Context) error {
-			dir, ok := ctx.Context.Value(types.Dir).(string)
-			if !ok {
-				return errNoDirInCtx
-			}
-
-			config, err := ReadConfig(dir, "config.yml")
-			if err != nil {
-				return fmt.Errorf("read config: %w", err)
-			}
-
-			ctx.Context = context.WithValue(ctx.Context, types.Cfg, config)
-
-			return nil
 		},
 
 		Action: func(ctx *cli.Context) error {
