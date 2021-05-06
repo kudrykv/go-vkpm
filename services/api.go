@@ -9,6 +9,8 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"strconv"
+	"sync"
 
 	"github.com/antchfx/htmlquery"
 	"github.com/kudrykv/go-vkpm/types"
@@ -18,25 +20,29 @@ type API struct {
 	hc  *http.Client
 	cfg types.Config
 	c   types.Cookies
+
+	blocksOn bool
+	mux      *sync.Mutex
 }
 
 var (
-	ErrBadCreds = errors.New("bad credentials")
-	ErrNoNode   = errors.New("node not found")
-	ErrNoID     = errors.New("no id found")
-	ErrNonEmpty = errors.New("expected empty response")
+	ErrBadCreds  = errors.New("bad credentials")
+	ErrNoNode    = errors.New("node not found")
+	ErrNoID      = errors.New("no id found")
+	ErrNonEmpty  = errors.New("expected empty response")
+	ErrBadStatus = errors.New("bad status")
 )
 
-func NewAPI(hc *http.Client, cfg types.Config) API {
-	return API{hc: hc, cfg: cfg}
+func NewAPI(hc *http.Client, cfg types.Config) *API {
+	return &API{hc: hc, cfg: cfg, mux: &sync.Mutex{}}
 }
 
-func (a API) WithCookies(c types.Cookies) API {
+func (a *API) WithCookies(c types.Cookies) *API {
 	a.c = c
 	return a
 }
 
-func (a API) Login(ctx context.Context, username, password string) (types.Cookies, error) {
+func (a *API) Login(ctx context.Context, username, password string) (types.Cookies, error) {
 	csrf, err := a.cookies(ctx)
 	if err != nil {
 		return types.Cookies{}, fmt.Errorf("cookies: %w", err)
@@ -95,16 +101,40 @@ func (a API) Login(ctx context.Context, username, password string) (types.Cookie
 	return cc, nil
 }
 
-func (a API) Dashboard(ctx context.Context) {
-	a.allBlocksOn(ctx)
+func (a *API) Dashboard(ctx context.Context, year, month int) error {
+	if err := a.allBlocksOn(ctx); err != nil {
+		return fmt.Errorf("turn blocks on: %w", err)
+	}
+
+	body := url.Values{"year": {strconv.Itoa(year)}, "month": {strconv.Itoa(month)}}
+	bts, resp, err := a.do(ctx, http.MethodPost, "https://"+a.cfg.Domain+"/dashboard/", body, a.h())
+	if err != nil {
+		return fmt.Errorf("get salary block: %w", err)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf(resp.Status+": %w", ErrBadStatus)
+	}
+
+	doc, err := htmlquery.Parse(bytes.NewReader(bts))
+	if err != nil {
+		return fmt.Errorf("parse salary block: %w", err)
+	}
+
+	_ = doc
+
+	return nil
 }
 
-func (a API) allBlocksOn(ctx context.Context) error {
-	h := http.Header{
-		"Cookie":      {"csrftoken=" + a.c.CSRFToken + "; sessionid=" + a.c.SessionID},
-		"Referer":     {"https://" + a.cfg.Domain + "/dashboard/"},
-		"x-csrftoken": {a.c.CSRFToken},
+func (a *API) allBlocksOn(ctx context.Context) error {
+	a.mux.Lock()
+	defer a.mux.Unlock()
+
+	if a.blocksOn {
+		return nil
 	}
+
+	h := a.h()
 
 	bts, _, err := a.do(ctx, http.MethodGet, "https://"+a.cfg.Domain+"/dashboard/", nil, h)
 	if err != nil {
@@ -140,15 +170,11 @@ func (a API) allBlocksOn(ctx context.Context) error {
 	values := url.Values{
 		"id":                {id},
 		"birthdays_block":   {"on"},
-		"holiday_block":     {"on"},
 		"user_salary_block": {"on"},
 		"users_block":       {"on"},
 	}
 
-	h.Set("Content-Type", "application/x-www-form-urlencoded")
-	body := bytes.NewReader([]byte(values.Encode()))
-
-	bts, _, err = a.do(ctx, http.MethodPost, "https://"+a.cfg.Domain+"/dashboard/update/", body, h)
+	bts, _, err = a.do(ctx, http.MethodPost, "https://"+a.cfg.Domain+"/dashboard/update/", values, h)
 	if err != nil {
 		return fmt.Errorf("do dashboard update: %w", err)
 	}
@@ -157,10 +183,20 @@ func (a API) allBlocksOn(ctx context.Context) error {
 		return fmt.Errorf(string(bts)+": %w", ErrNonEmpty) // nolint: goerr113
 	}
 
+	a.blocksOn = true
+
 	return nil
 }
 
-func (a API) cookies(ctx context.Context) (string, error) {
+func (a *API) h() http.Header {
+	return http.Header{
+		"Cookie":      {"csrftoken=" + a.c.CSRFToken + "; sessionid=" + a.c.SessionID},
+		"Referer":     {"https://" + a.cfg.Domain + "/dashboard/"},
+		"x-csrftoken": {a.c.CSRFToken},
+	}
+}
+
+func (a *API) cookies(ctx context.Context) (string, error) {
 	// resp body is already closed
 	// nolint: bodyclose
 	_, resp, err := a.do(ctx, http.MethodGet, "https://"+a.cfg.Domain+"/login/", nil, nil)
@@ -177,20 +213,36 @@ func (a API) cookies(ctx context.Context) (string, error) {
 	return "", nil
 }
 
-func (a API) do(
-	ctx context.Context, method, url string, body io.Reader, h http.Header,
+func (a *API) do(
+	ctx context.Context, method, url string, body url.Values, h http.Header,
 ) ([]byte, *http.Response, error) {
-	req, err := http.NewRequestWithContext(ctx, method, url, body)
+	var (
+		req *http.Request
+		err error
+		rdr io.Reader
+	)
+
+	if body != nil {
+		rdr = bytes.NewReader([]byte(body.Encode()))
+	}
+
+	req, err = http.NewRequestWithContext(ctx, method, url, rdr)
 	if err != nil {
 		return nil, nil, fmt.Errorf("new request: %w", err)
 	}
-
-	req.Header.Set("Referer", "https://"+a.cfg.Domain+"/login/")
 
 	for k, v := range h {
 		for _, s := range v {
 			req.Header.Add(k, s)
 		}
+	}
+
+	if len(req.Header.Get("Referer")) == 0 {
+		req.Header.Set("Referer", "https://"+a.cfg.Domain+"/login/")
+	}
+
+	if rdr != nil {
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	}
 
 	resp, err := a.hc.Do(req)

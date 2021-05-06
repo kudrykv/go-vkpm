@@ -13,7 +13,7 @@ import (
 	"golang.org/x/term"
 )
 
-func Login(config types.Config, api services.API) *cli.Command {
+func Login(config types.Config, api *services.API) *cli.Command {
 	// nolint: forbidigo
 	return &cli.Command{
 		Name: "login",

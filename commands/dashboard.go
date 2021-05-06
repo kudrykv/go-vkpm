@@ -5,11 +5,11 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-func Dashboard(api services.API) *cli.Command {
+func Dashboard(api *services.API) *cli.Command {
 	return &cli.Command{
 		Name: "dashboard",
 		Action: func(c *cli.Context) error {
-			api.Dashboard(c.Context)
+			api.Dashboard(c.Context, 2021, 04)
 
 			return nil
 		},
