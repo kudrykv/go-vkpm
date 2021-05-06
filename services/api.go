@@ -130,6 +130,33 @@ func (a *API) Salary(ctx context.Context, year, month int) (types.Salary, error)
 	return salary, nil
 }
 
+func (a *API) Birthdays(ctx context.Context) error {
+	if err := a.allBlocksOn(ctx); err != nil {
+		return fmt.Errorf("turn blocks on: %w", err)
+	}
+
+	uri := "https://" + a.cfg.Domain + "/dashboard/block/birthdays_block/?time_range_field=birthdays_block_end_days&time_range_value=366"
+	bts, resp, err := a.do(ctx, http.MethodGet, uri, nil, a.h())
+	if err != nil {
+		return fmt.Errorf("get birthdays: %w", err)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf(resp.Status+": %w", ErrBadStatus)
+	}
+
+	doc, err := htmlquery.Parse(bytes.NewReader(bts))
+	if err != nil {
+		return fmt.Errorf("parse birthdays block: %w", err)
+	}
+
+	node, err := types.NewPersonsFromHTMLNode(doc)
+
+	_ = node
+
+	return nil
+}
+
 func (a *API) allBlocksOn(ctx context.Context) error {
 	a.mux.Lock()
 	defer a.mux.Unlock()

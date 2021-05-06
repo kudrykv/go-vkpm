@@ -21,6 +21,10 @@ func Dashboard(api *services.API) *cli.Command {
 
 			_ = salary
 
+			if err = api.Birthdays(c.Context); err != nil {
+				return fmt.Errorf("birthdays: %w", err)
+			}
+
 			return nil
 		},
 	}
