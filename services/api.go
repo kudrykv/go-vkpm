@@ -123,7 +123,7 @@ func (a *API) Salary(ctx context.Context, year, month int) (types.Salary, error)
 		return salary, fmt.Errorf("parse salary block: %w", err)
 	}
 
-	if salary, err = types.NewSalaryFromHTMLNode(doc); err != nil {
+	if salary, err = types.NewSalaryFromHTMLNode(doc, year, month); err != nil {
 		return salary, fmt.Errorf("new salary from html node: %w", err)
 	}
 

@@ -5,25 +5,49 @@ import (
 	"time"
 
 	"github.com/kudrykv/go-vkpm/services"
+	"github.com/kudrykv/go-vkpm/types"
 	"github.com/urfave/cli/v2"
+	"golang.org/x/sync/errgroup"
 )
 
 func Dashboard(api *services.API) *cli.Command {
 	return &cli.Command{
 		Name: "dashboard",
 		Action: func(c *cli.Context) error {
-			now := time.Now()
+			var (
+				thisMonthSalary types.Salary
+				lastMonthSalary types.Salary
+			)
 
-			salary, err := api.Salary(c.Context, now.Year(), int(now.Month()))
-			if err != nil {
-				return fmt.Errorf("salary: %w", err)
+			thisMonth := time.Now()
+			lastMonth := thisMonth.AddDate(0, -1, 0)
+
+			group, cctx := errgroup.WithContext(c.Context)
+
+			group.Go(func() error {
+				var err error
+				if thisMonthSalary, err = api.Salary(cctx, thisMonth.Year(), int(thisMonth.Month())); err != nil {
+					return fmt.Errorf("this month salary: %w", err)
+				}
+
+				return nil
+			})
+
+			group.Go(func() error {
+				var err error
+				if lastMonthSalary, err = api.Salary(cctx, lastMonth.Year(), int(lastMonth.Month())); err != nil {
+					return fmt.Errorf("last month salary: %w", err)
+				}
+
+				return nil
+			})
+
+			if err := group.Wait(); err != nil {
+				return fmt.Errorf("group: %w", err)
 			}
 
-			_ = salary
-
-			if err = api.Birthdays(c.Context); err != nil {
-				return fmt.Errorf("birthdays: %w", err)
-			}
+			_, _ = fmt.Fprintln(c.App.Writer, thisMonthSalary.StringTotalPaid())
+			_, _ = fmt.Fprintln(c.App.Writer, lastMonthSalary.StringTotalPaid())
 
 			return nil
 		},

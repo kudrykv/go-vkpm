@@ -5,8 +5,10 @@ import (
 	"fmt"
 	"regexp"
 	"strconv"
+	"time"
 
 	"github.com/antchfx/htmlquery"
+	"github.com/jwalton/gchalk"
 	"golang.org/x/net/html"
 )
 
@@ -21,18 +23,38 @@ type Salary struct {
 	OvertimeHours    float64
 	OvertimeDollars  float64
 	BonusDollars     float64
+	Year             int
+	Month            int
+	Total            float64
+	Paid             float64
+}
+
+func (s Salary) StringTotalPaid() string {
+	format := time.Date(s.Year, time.Month(s.Month), 0, 0, 0, 0, 0, time.UTC).Format("January, 2006")
+
+	var out string
+	if s.Paid == 0 {
+		expected := gchalk.Green("$" + strconv.FormatFloat(s.ExpectedSalary, 'f', 2, 64))
+		out = "expected " + expected
+	} else {
+		paid := gchalk.Green("$" + strconv.FormatFloat(s.Paid, 'f', 2, 64))
+		out = "got " + paid
+	}
+
+	return gchalk.White(format) + ": " + out
 }
 
 var (
 	ErrNodeNotFound = errors.New("node not found")
 	ErrNumNotFound  = errors.New("number not found")
+	ErrBadTotalPaid = errors.New("bad total / paid")
 
 	numRegex = regexp.MustCompile(`\d+(?:\.\d+)?`)
 )
 
-func NewSalaryFromHTMLNode(doc *html.Node) (Salary, error) {
+func NewSalaryFromHTMLNode(doc *html.Node, year int, month int) (Salary, error) {
 	var (
-		salary Salary
+		salary = Salary{Year: year, Month: month}
 		err    error
 	)
 
@@ -56,6 +78,26 @@ func NewSalaryFromHTMLNode(doc *html.Node) (Salary, error) {
 		if *kv.f, err = getNumFromNode(doc, kv.expr); err != nil {
 			return salary, fmt.Errorf("get num from node: %w", err)
 		}
+	}
+
+	totalAndPaid, err := getTextFromNode(doc, `//td[. = "Total / Paid"]/following-sibling::td`)
+	if err != nil {
+		return salary, fmt.Errorf("get text from node: %w", err)
+	}
+
+	strings := numRegex.FindAllString(totalAndPaid, -1)
+	if len(strings) != 2 {
+		return salary, fmt.Errorf(totalAndPaid+": %w", ErrBadTotalPaid)
+	}
+
+	totalStr, paidStr := strings[0], strings[1]
+
+	if salary.Total, err = strconv.ParseFloat(totalStr, 10); err != nil {
+		return salary, fmt.Errorf("parse float: %w", err)
+	}
+
+	if salary.Paid, err = strconv.ParseFloat(paidStr, 10); err != nil {
+		return salary, fmt.Errorf("parse float: %w", err)
 	}
 
 	return salary, nil
