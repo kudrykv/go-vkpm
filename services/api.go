@@ -15,6 +15,7 @@ import (
 
 	"github.com/antchfx/htmlquery"
 	"github.com/kudrykv/go-vkpm/types"
+	"golang.org/x/net/html"
 )
 
 type API struct {
@@ -110,18 +111,10 @@ func (a *API) Salary(ctx context.Context, year, month int) (types.Salary, error)
 	}
 
 	body := url.Values{"year": {strconv.Itoa(year)}, "month": {strconv.Itoa(month)}}
-	bts, resp, err := a.do(ctx, http.MethodPost, "https://"+a.cfg.Domain+"/dashboard/block/user_salary_block/", body, a.h())
-	if err != nil {
-		return salary, fmt.Errorf("get salary block: %w", err)
-	}
 
-	if resp.StatusCode != http.StatusOK {
-		return salary, fmt.Errorf(resp.Status+": %w", ErrBadStatus)
-	}
-
-	doc, err := htmlquery.Parse(bytes.NewReader(bts))
+	doc, err := a.doParse(ctx, http.MethodPost, "/dashboard/block/user_salary_block/", body)
 	if err != nil {
-		return salary, fmt.Errorf("parse salary block: %w", err)
+		return salary, fmt.Errorf("do parse: %w", err)
 	}
 
 	if salary, err = types.NewSalaryFromHTMLNode(doc, year, month); err != nil {
@@ -136,19 +129,11 @@ func (a *API) Birthdays(ctx context.Context) (types.Persons, error) {
 		return nil, fmt.Errorf("turn blocks on: %w", err)
 	}
 
-	uri := "https://" + a.cfg.Domain + "/dashboard/block/birthdays_block/?time_range_field=birthdays_block_end_days&time_range_value=366"
-	bts, resp, err := a.do(ctx, http.MethodGet, uri, nil, a.h())
-	if err != nil {
-		return nil, fmt.Errorf("get birthdays: %w", err)
-	}
+	uri := "/dashboard/block/birthdays_block/?time_range_field=birthdays_block_end_days&time_range_value=366"
 
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf(resp.Status+": %w", ErrBadStatus)
-	}
-
-	doc, err := htmlquery.Parse(bytes.NewReader(bts))
+	doc, err := a.doParse(ctx, http.MethodGet, uri, nil)
 	if err != nil {
-		return nil, fmt.Errorf("parse birthdays block: %w", err)
+		return nil, fmt.Errorf("do parse: %w", err)
 	}
 
 	persons, err := types.NewPersonsFromHTMLNode(doc)
@@ -162,18 +147,9 @@ func (a *API) Birthdays(ctx context.Context) (types.Persons, error) {
 func (a *API) History(ctx context.Context, year int, month time.Month) (types.ReportEntries, error) {
 	body := url.Values{"year": {strconv.Itoa(year)}, "month": {strconv.Itoa(int(month))}}
 
-	bts, resp, err := a.do(ctx, http.MethodGet, "https://"+a.cfg.Domain+"/history/", body, a.h())
+	doc, err := a.doParse(ctx, http.MethodGet, "/history/", body)
 	if err != nil {
-		return nil, fmt.Errorf("get history: %w", err)
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf(resp.Status+": %w", ErrBadStatus)
-	}
-
-	doc, err := htmlquery.Parse(bytes.NewReader(bts))
-	if err != nil {
-		return nil, fmt.Errorf("parse history: %w", err)
+		return nil, fmt.Errorf("do parse: %w", err)
 	}
 
 	entries, err := types.NewReportEntriesFromHTMLNode(doc)
@@ -182,6 +158,24 @@ func (a *API) History(ctx context.Context, year int, month time.Month) (types.Re
 	}
 
 	return entries, nil
+}
+
+func (a *API) doParse(ctx context.Context, method, url string, body url.Values) (*html.Node, error) {
+	bts, resp, err := a.do(ctx, method, "https://"+a.cfg.Domain+url, body, a.h())
+	if err != nil {
+		return nil, fmt.Errorf("do: %w", err)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf(resp.Status+": %w", ErrBadStatus)
+	}
+
+	doc, err := htmlquery.Parse(bytes.NewReader(bts))
+	if err != nil {
+		return nil, fmt.Errorf("parse: %w", err)
+	}
+
+	return doc, nil
 }
 
 func (a *API) allBlocksOn(ctx context.Context) error {
