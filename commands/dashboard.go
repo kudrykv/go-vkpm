@@ -61,6 +61,8 @@ func Dashboard(api *services.API) *cli.Command {
 			_, _ = fmt.Fprintln(c.App.Writer)
 			_, _ = fmt.Fprintln(c.App.Writer, thisMonthSalary.StringHoursReport())
 
+			_, _ = fmt.Fprintln(c.App.Writer, historyEntries)
+
 			return nil
 		},
 	}

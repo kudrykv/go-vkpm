@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"regexp"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/antchfx/htmlquery"
@@ -85,7 +86,7 @@ func NewSalaryFromHTMLNode(doc *html.Node, year int, month int) (Salary, error) 
 	}
 
 	for _, kv := range iter {
-		if *kv.f, err = getNumFromNode(doc, kv.expr); err != nil {
+		if *kv.f, err = getFloat64FromNode(doc, kv.expr); err != nil {
 			return salary, fmt.Errorf("get num from node: %w", err)
 		}
 	}
@@ -95,12 +96,12 @@ func NewSalaryFromHTMLNode(doc *html.Node, year int, month int) (Salary, error) 
 		return salary, fmt.Errorf("get text from node: %w", err)
 	}
 
-	strings := numRegex.FindAllString(totalAndPaid, -1)
-	if len(strings) != 2 {
+	strs := numRegex.FindAllString(totalAndPaid, -1)
+	if len(strs) != 2 {
 		return salary, fmt.Errorf(totalAndPaid+": %w", ErrBadTotalPaid)
 	}
 
-	totalStr, paidStr := strings[0], strings[1]
+	totalStr, paidStr := strs[0], strs[1]
 
 	if salary.Total, err = strconv.ParseFloat(totalStr, 10); err != nil {
 		return salary, fmt.Errorf("parse float: %w", err)
@@ -113,7 +114,7 @@ func NewSalaryFromHTMLNode(doc *html.Node, year int, month int) (Salary, error) 
 	return salary, nil
 }
 
-func getNumFromNode(doc *html.Node, expr string) (float64, error) {
+func getFloat64FromNode(doc *html.Node, expr string) (float64, error) {
 	text, err := getTextFromNode(doc, expr)
 	if err != nil {
 		return 0, fmt.Errorf("get text from node: %w", err)
@@ -127,17 +128,45 @@ func getNumFromNode(doc *html.Node, expr string) (float64, error) {
 	return num, nil
 }
 
+func getIntFromNode(doc *html.Node, expr string) (int, error) {
+	text, err := getTextFromNode(doc, expr)
+	if err != nil {
+		return 0, fmt.Errorf("get text from node: %w", err)
+	}
+
+	atoi, err := strconv.Atoi(text)
+	if err != nil {
+		return 0, fmt.Errorf("atoi: %w", err)
+	}
+
+	return atoi, nil
+}
+
 func getTextFromNode(doc *html.Node, expr string) (string, error) {
 	node, err := htmlquery.Query(doc, expr)
 	if err != nil {
-		return "", fmt.Errorf("query rate per hour: %w", err)
+		return "", fmt.Errorf("query: %w", err)
 	}
 
 	if node == nil {
-		return "", fmt.Errorf("rate per hour: %w", ErrNodeNotFound)
+		return "", fmt.Errorf("nil node: %w", ErrNodeNotFound)
 	}
 
-	return node.FirstChild.Data, nil
+	return strings.TrimSpace(node.FirstChild.Data), nil
+}
+
+func getTimeFromNode(doc *html.Node, layout, expr string) (time.Time, error) {
+	text, err := getTextFromNode(doc, expr)
+	if err != nil {
+		return time.Time{}, fmt.Errorf("get text from node: %w", err)
+	}
+
+	moment, err := time.Parse(layout, text)
+	if err != nil {
+		return time.Time{}, fmt.Errorf("parse time: %w", err)
+	}
+
+	return moment, nil
 }
 
 func getNumFromString(str string) (float64, error) {
