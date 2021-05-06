@@ -13,20 +13,21 @@ import (
 )
 
 type Salary struct {
-	RatePerHour      float64
-	Rate             float64
-	HoursByCurrDay   float64
-	DollarsByCurrDay float64
-	ExpectedSalary   float64
-	VacationHours    float64
-	VacationDollars  float64
-	OvertimeHours    float64
-	OvertimeDollars  float64
-	BonusDollars     float64
-	Year             int
-	Month            int
-	Total            float64
-	Paid             float64
+	RatePerHour        float64
+	Rate               float64
+	HoursByCurrDay     float64
+	DollarsByCurrDay   float64
+	ExpectedSalary     float64
+	VacationHours      float64
+	VacationDollars    float64
+	OvertimeHours      float64
+	OvertimeDollars    float64
+	BonusDollars       float64
+	WorkingDaysInMonth float64
+	Year               int
+	Month              int
+	Total              float64
+	Paid               float64
 }
 
 func (s Salary) StringTotalPaid() string {
@@ -64,6 +65,7 @@ func NewSalaryFromHTMLNode(doc *html.Node, year int, month int) (Salary, error) 
 	}{
 		{&salary.RatePerHour, `//td[contains(., "rate per hour:")]`},
 		{&salary.Rate, `//td[contains(., "rate:")]`},
+		{&salary.WorkingDaysInMonth, `//td[. = "Working days in month:"]/following-sibling::td[1]`},
 		{&salary.HoursByCurrDay, `//td[. = "Hours By Current Day"]/following-sibling::td[1]`},
 		{&salary.DollarsByCurrDay, `//td[. = "Hours By Current Day"]/following-sibling::td[2]`},
 		{&salary.ExpectedSalary, `//td[. = "Expected Salary"]/following-sibling::td[2]`},
