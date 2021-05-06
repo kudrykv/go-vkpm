@@ -45,6 +45,14 @@ func (s Salary) StringTotalPaid() string {
 	return gchalk.White(format) + ": " + out
 }
 
+func (s Salary) StringHoursReport() string {
+	return "Reported: " + f2s(s.HoursByCurrDay) + " of " + f2s(s.WorkingDaysInMonth)
+}
+
+func f2s(f float64) string {
+	return strconv.FormatFloat(f, 'f', 2, 64)
+}
+
 var (
 	ErrNodeNotFound = errors.New("node not found")
 	ErrNumNotFound  = errors.New("number not found")

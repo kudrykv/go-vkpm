@@ -17,6 +17,7 @@ func Dashboard(api *services.API) *cli.Command {
 			var (
 				thisMonthSalary types.Salary
 				lastMonthSalary types.Salary
+				historyEntries  types.ReportEntries
 			)
 
 			thisMonth := time.Now()
@@ -42,12 +43,23 @@ func Dashboard(api *services.API) *cli.Command {
 				return nil
 			})
 
+			group.Go(func() error {
+				var err error
+				if historyEntries, err = api.History(cctx, thisMonth.Year(), thisMonth.Month()); err != nil {
+					return fmt.Errorf("history: %w", err)
+				}
+
+				return nil
+			})
+
 			if err := group.Wait(); err != nil {
 				return fmt.Errorf("group: %w", err)
 			}
 
 			_, _ = fmt.Fprintln(c.App.Writer, thisMonthSalary.StringTotalPaid())
 			_, _ = fmt.Fprintln(c.App.Writer, lastMonthSalary.StringTotalPaid())
+			_, _ = fmt.Fprintln(c.App.Writer)
+			_, _ = fmt.Fprintln(c.App.Writer, thisMonthSalary.StringHoursReport())
 
 			return nil
 		},

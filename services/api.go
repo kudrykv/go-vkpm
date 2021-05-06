@@ -11,6 +11,7 @@ import (
 	"net/url"
 	"strconv"
 	"sync"
+	"time"
 
 	"github.com/antchfx/htmlquery"
 	"github.com/kudrykv/go-vkpm/types"
@@ -156,6 +157,31 @@ func (a *API) Birthdays(ctx context.Context) (types.Persons, error) {
 	}
 
 	return persons, nil
+}
+
+func (a *API) History(ctx context.Context, year int, month time.Month) (types.ReportEntries, error) {
+	body := url.Values{"year": {strconv.Itoa(year)}, "month": {strconv.Itoa(int(month))}}
+
+	bts, resp, err := a.do(ctx, http.MethodGet, "https://"+a.cfg.Domain+"/history/", body, a.h())
+	if err != nil {
+		return nil, fmt.Errorf("get history: %w", err)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf(resp.Status+": %w", ErrBadStatus)
+	}
+
+	doc, err := htmlquery.Parse(bytes.NewReader(bts))
+	if err != nil {
+		return nil, fmt.Errorf("parse history: %w", err)
+	}
+
+	entries, err := types.NewReportEntriesFromHTMLNode(doc)
+	if err != nil {
+		return nil, fmt.Errorf("new report entries from html node: %w", err)
+	}
+
+	return entries, nil
 }
 
 func (a *API) allBlocksOn(ctx context.Context) error {
