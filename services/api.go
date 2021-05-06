@@ -101,29 +101,33 @@ func (a *API) Login(ctx context.Context, username, password string) (types.Cooki
 	return cc, nil
 }
 
-func (a *API) Dashboard(ctx context.Context, year, month int) error {
+func (a *API) Salary(ctx context.Context, year, month int) (types.Salary, error) {
+	var salary types.Salary
+
 	if err := a.allBlocksOn(ctx); err != nil {
-		return fmt.Errorf("turn blocks on: %w", err)
+		return salary, fmt.Errorf("turn blocks on: %w", err)
 	}
 
 	body := url.Values{"year": {strconv.Itoa(year)}, "month": {strconv.Itoa(month)}}
-	bts, resp, err := a.do(ctx, http.MethodPost, "https://"+a.cfg.Domain+"/dashboard/", body, a.h())
+	bts, resp, err := a.do(ctx, http.MethodPost, "https://"+a.cfg.Domain+"/dashboard/block/user_salary_block/", body, a.h())
 	if err != nil {
-		return fmt.Errorf("get salary block: %w", err)
+		return salary, fmt.Errorf("get salary block: %w", err)
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf(resp.Status+": %w", ErrBadStatus)
+		return salary, fmt.Errorf(resp.Status+": %w", ErrBadStatus)
 	}
 
 	doc, err := htmlquery.Parse(bytes.NewReader(bts))
 	if err != nil {
-		return fmt.Errorf("parse salary block: %w", err)
+		return salary, fmt.Errorf("parse salary block: %w", err)
 	}
 
-	_ = doc
+	if salary, err = types.NewSalaryFromHTMLNode(doc); err != nil {
+		return salary, fmt.Errorf("new salary from html node: %w", err)
+	}
 
-	return nil
+	return salary, nil
 }
 
 func (a *API) allBlocksOn(ctx context.Context) error {

@@ -1,6 +1,9 @@
 package commands
 
 import (
+	"fmt"
+	"time"
+
 	"github.com/kudrykv/go-vkpm/services"
 	"github.com/urfave/cli/v2"
 )
@@ -9,7 +12,14 @@ func Dashboard(api *services.API) *cli.Command {
 	return &cli.Command{
 		Name: "dashboard",
 		Action: func(c *cli.Context) error {
-			api.Dashboard(c.Context, 2021, 04)
+			now := time.Now()
+
+			salary, err := api.Salary(c.Context, now.Year(), int(now.Month()))
+			if err != nil {
+				return fmt.Errorf("salary: %w", err)
+			}
+
+			_ = salary
 
 			return nil
 		},
