@@ -1,33 +1,50 @@
 package commands
 
 import (
-	"context"
 	"fmt"
+	"os"
+	"strings"
 
+	"github.com/kudrykv/go-vkpm/services"
 	"github.com/kudrykv/go-vkpm/types"
 	"github.com/urfave/cli/v2"
 )
 
-func Login() *cli.Command {
+func Login(config types.Config, api services.API) *cli.Command {
 	return &cli.Command{
 		Name: "login",
-		Before: func(ctx *cli.Context) error {
-			dir, ok := ctx.Context.Value(types.Dir).(string)
-			if !ok {
-				return errNoDirInCtx
-			}
 
-			config, err := ReadConfig(dir, "config.yml")
-			if err != nil {
-				return fmt.Errorf("read config: %w", err)
-			}
-
-			ctx.Context = context.WithValue(ctx.Context, types.Cfg, config)
-
-			return nil
-		},
 		Action: func(ctx *cli.Context) error {
+			dir, err := EnsureConfigDir()
+			if err != nil {
+				return fmt.Errorf("ensure config dir: %w", err)
+			}
+
+			config.Cookies, err = api.Login(ctx.Context, "", "")
+			if err != nil {
+				return fmt.Errorf("login: %w", err)
+			}
+
+			if err = WriteConfig(dir, "config.yml", config); err != nil {
+				return fmt.Errorf("write config: %w", err)
+			}
+
 			return nil
 		},
 	}
+}
+
+func EnsureConfigDir() (string, error) {
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return "", fmt.Errorf("user home dir: %w", err)
+	}
+
+	configRoot := strings.Join([]string{homeDir, ".config", "vkpm"}, string(os.PathSeparator))
+
+	if err = os.MkdirAll(configRoot, os.ModePerm); err != nil {
+		return "", fmt.Errorf("mkdir all: %w", err)
+	}
+
+	return configRoot, nil
 }

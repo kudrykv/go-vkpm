@@ -4,10 +4,13 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
+	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/kudrykv/go-vkpm/commands"
+	"github.com/kudrykv/go-vkpm/services"
 	"github.com/kudrykv/go-vkpm/types"
 	"github.com/urfave/cli/v2"
 	"gopkg.in/yaml.v2"
@@ -24,7 +27,7 @@ func main() {
 	var config types.Config
 	join := strings.Join([]string{dir, "config.yml"}, string(os.PathSeparator))
 
-	if _, err := os.Stat(join); os.IsNotExist(err) {
+	if _, err = os.Stat(join); os.IsNotExist(err) {
 		file, err := os.Create(join)
 		if err != nil {
 			exit("create", err)
@@ -43,16 +46,24 @@ func main() {
 	ctx = context.WithValue(ctx, types.Dir, dir)
 	ctx = context.WithValue(ctx, types.Cfg, config)
 
+	api := services.NewAPI(&http.Client{
+		Transport: http.DefaultTransport,
+		CheckRedirect: func(*http.Request, []*http.Request) error {
+			return http.ErrUseLastResponse
+		},
+		Timeout: 5 * time.Second,
+	}, config)
+
 	app := &cli.App{
 		Name: "vkpm",
 		Commands: []*cli.Command{
 			commands.Config(),
-			commands.Login(),
+			commands.Login(config, api),
 		},
 	}
 
-	if err := app.RunContext(ctx, os.Args); err != nil {
-		exit("run", err)
+	if err = app.RunContext(ctx, os.Args); err != nil {
+		exit("", err)
 	}
 }
 
@@ -71,8 +82,14 @@ func EnsureConfigDir() (string, error) {
 	return configRoot, nil
 }
 
+// nolint:forbidigo
 func exit(msg string, err error) {
-	fmt.Println(msg+":", err) //nolint:forbidigo
+	if len(msg) == 0 {
+		fmt.Println(err)
+	} else {
+		fmt.Println(msg+":", err)
+	}
+
 	os.Exit(1)
 }
 
