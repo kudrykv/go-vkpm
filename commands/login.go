@@ -1,16 +1,20 @@
 package commands
 
 import (
+	"bufio"
 	"fmt"
 	"os"
 	"strings"
+	"syscall"
 
 	"github.com/kudrykv/go-vkpm/services"
 	"github.com/kudrykv/go-vkpm/types"
 	"github.com/urfave/cli/v2"
+	"golang.org/x/term"
 )
 
 func Login(config types.Config, api services.API) *cli.Command {
+	// nolint: forbidigo
 	return &cli.Command{
 		Name: "login",
 
@@ -20,7 +24,26 @@ func Login(config types.Config, api services.API) *cli.Command {
 				return fmt.Errorf("ensure config dir: %w", err)
 			}
 
-			config.Cookies, err = api.Login(ctx.Context, "", "")
+			reader := bufio.NewReader(os.Stdin)
+
+			fmt.Print("username: ")
+
+			username, err := reader.ReadString('\n')
+			if err != nil {
+				return fmt.Errorf("read string: %w", err)
+			}
+
+			fmt.Print("password: ")
+
+			btsPassword, err := term.ReadPassword(syscall.Stdin)
+
+			fmt.Println()
+
+			if err != nil {
+				return fmt.Errorf("read password: %w", err)
+			}
+
+			config.Cookies, err = api.Login(ctx.Context, username, string(btsPassword))
 			if err != nil {
 				return fmt.Errorf("login: %w", err)
 			}
