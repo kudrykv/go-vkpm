@@ -52,13 +52,15 @@ func main() {
 			return http.ErrUseLastResponse
 		},
 		Timeout: 5 * time.Second,
-	}, config)
+	}, config).
+		WithCookies(config.Cookies)
 
 	app := &cli.App{
 		Name: "vkpm",
 		Commands: []*cli.Command{
 			commands.Config(),
 			commands.Login(config, api),
+			commands.Dashboard(api),
 		},
 	}
 
