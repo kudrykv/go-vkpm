@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -18,6 +19,8 @@ func Dashboard(api *services.API) *cli.Command {
 				thisMonthSalary types.Salary
 				lastMonthSalary types.Salary
 				historyEntries  types.ReportEntries
+				holidays        types.Holidays
+				vacations       types.Vacations
 			)
 
 			thisMonth := time.Now()
@@ -25,32 +28,10 @@ func Dashboard(api *services.API) *cli.Command {
 
 			group, cctx := errgroup.WithContext(c.Context)
 
-			group.Go(func() error {
-				var err error
-				if thisMonthSalary, err = api.Salary(cctx, thisMonth.Year(), int(thisMonth.Month())); err != nil {
-					return fmt.Errorf("this month salary: %w", err)
-				}
-
-				return nil
-			})
-
-			group.Go(func() error {
-				var err error
-				if lastMonthSalary, err = api.Salary(cctx, lastMonth.Year(), int(lastMonth.Month())); err != nil {
-					return fmt.Errorf("last month salary: %w", err)
-				}
-
-				return nil
-			})
-
-			group.Go(func() error {
-				var err error
-				if historyEntries, err = api.History(cctx, thisMonth.Year(), thisMonth.Month()); err != nil {
-					return fmt.Errorf("history: %w", err)
-				}
-
-				return nil
-			})
+			group.Go(getSalary(cctx, api, thisMonth, &thisMonthSalary))
+			group.Go(getSalary(cctx, api, lastMonth, &lastMonthSalary))
+			group.Go(getHistory(cctx, api, thisMonth, &historyEntries))
+			group.Go(getVacationsHolidays(cctx, api, thisMonthSalary, &vacations, &holidays))
 
 			if err := group.Wait(); err != nil {
 				return fmt.Errorf("group: %w", err)
@@ -65,5 +46,40 @@ func Dashboard(api *services.API) *cli.Command {
 
 			return nil
 		},
+	}
+}
+
+func getVacationsHolidays(
+	cctx context.Context, api *services.API, salary types.Salary, vacations *types.Vacations, holidays *types.Holidays,
+) func() error {
+	return func() error {
+		var err error
+		if *vacations, *holidays, err = api.Vacations(cctx, salary.Year); err != nil {
+			return fmt.Errorf("vacations: %w", err)
+		}
+
+		return nil
+	}
+}
+
+func getHistory(cctx context.Context, api *services.API, moment time.Time, entries *types.ReportEntries) func() error {
+	return func() error {
+		var err error
+		if *entries, err = api.History(cctx, moment.Year(), moment.Month()); err != nil {
+			return fmt.Errorf("history: %w", err)
+		}
+
+		return nil
+	}
+}
+
+func getSalary(cctx context.Context, api *services.API, moment time.Time, salary *types.Salary) func() error {
+	return func() error {
+		var err error
+		if *salary, err = api.Salary(cctx, moment.Year(), int(moment.Month())); err != nil {
+			return fmt.Errorf("salary: %w", err)
+		}
+
+		return nil
 	}
 }
