@@ -12,25 +12,24 @@ type Vacations []Vacation
 
 func (v Vacations) Vacated(day Date) bool {
 	for _, vac := range v {
-		if vac.StartDate.Equal(day) {
+		if vac.Vacated(day) {
 			return true
-		}
-
-		if vac.EndDate.IsZero() {
-			return false
-		}
-
-		cur := vac.StartDate
-		for i := 0; i < int(vac.Span/(time.Duration(24)*time.Hour)); i++ {
-			if cur.Equal(day) {
-				return true
-			}
-
-			cur = cur.AddDate(0, 0, 1)
 		}
 	}
 
 	return false
+}
+
+func (v Vacations) InMonth(day Date) Vacations {
+	var vacs Vacations
+
+	for _, vacation := range v {
+		if vacation.InMonth(day) {
+			vacs = append(vacs, vacation)
+		}
+	}
+
+	return vacs
 }
 
 type Vacation struct {
@@ -42,6 +41,48 @@ type Vacation struct {
 	Status    string
 	Paid      bool
 	Note      string
+}
+
+func (v Vacation) Vacated(day Date) bool {
+	if v.StartDate.Equal(day) {
+		return true
+	}
+
+	if v.EndDate.IsZero() {
+		return false
+	}
+
+	cur := v.StartDate
+	for i := 0; i < int(v.Span/(time.Duration(24)*time.Hour)); i++ {
+		if cur.Equal(day) {
+			return true
+		}
+
+		cur = cur.AddDate(0, 0, 1)
+	}
+
+	return false
+}
+
+func (v Vacation) InMonth(day Date) bool {
+	if v.StartDate.Month() == day.Month() {
+		return true
+	}
+
+	if v.EndDate.IsZero() {
+		return false
+	}
+
+	cur := v.StartDate
+	for i := 0; i < int(v.Span/(time.Duration(24)*time.Hour)); i++ {
+		if cur.Month() == day.Month() {
+			return true
+		}
+
+		cur = cur.AddDate(0, 0, 1)
+	}
+
+	return false
 }
 
 func NewVacationsFromHTMLNode(doc *html.Node) (Vacations, error) {

@@ -34,6 +34,14 @@ func (m MonthInfo) String() string {
 		s += fmt.Sprint("Need to report for ", nrep, "\n")
 	}
 
+	if him := m.holidays.InMonth(m.moment); len(him) > 0 {
+		s += fmt.Sprint("\nHolidays:\n", him, "\n")
+	}
+
+	if vim := m.vacations.InMonth(m.moment); len(vim) > 0 {
+		s += fmt.Sprint("\nVacations:\n", vim, "\n")
+	}
+
 	return s
 }
 

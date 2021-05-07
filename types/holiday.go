@@ -3,6 +3,7 @@ package types
 import (
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/antchfx/htmlquery"
 	"golang.org/x/net/html"
@@ -20,9 +21,38 @@ func (h Holidays) Holiday(day Date) bool {
 	return false
 }
 
+func (h Holidays) InMonth(day Date) Holidays {
+	var im Holidays
+
+	for _, holiday := range h {
+		if holiday.Date.Month() == day.Month() {
+			im = append(im, holiday)
+		}
+	}
+
+	return im
+}
+
+func (h Holidays) String() string {
+	if len(h) == 0 {
+		return ""
+	}
+
+	ss := make([]string, 0, len(h))
+	for _, holiday := range h {
+		ss = append(ss, holiday.String())
+	}
+
+	return strings.Join(ss, "\n")
+}
+
 type Holiday struct {
 	Name string
 	Date Date
+}
+
+func (h Holiday) String() string {
+	return h.Date.String() + " -- " + h.Name
 }
 
 func NewHolidaysFromHTMLNode(doc *html.Node) (Holidays, error) {
