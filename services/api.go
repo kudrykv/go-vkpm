@@ -163,14 +163,17 @@ func (a *API) History(ctx context.Context, year int, month time.Month) (types.Re
 func (a *API) Vacations(ctx context.Context, year int) (types.Vacations, types.Holidays, error) {
 	body := url.Values{"year": {strconv.Itoa(year)}, "year_changed": {"true"}}
 
-	doc, err := a.doParse(ctx, http.MethodGet, "/vacations/", body)
+	doc, err := a.doParse(ctx, http.MethodPost, "/vacations/", body)
 	if err != nil {
 		return nil, nil, fmt.Errorf("do parse: %w", err)
 	}
 
-	_ = doc
+	vacations, err := types.NewVacationsFromHTMLNode(doc)
+	if err != nil {
+		return nil, nil, fmt.Errorf("new vacations from html node: %w", err)
+	}
 
-	return nil, nil, nil
+	return vacations, nil, nil
 }
 
 func (a *API) doParse(ctx context.Context, method, url string, body url.Values) (*html.Node, error) {

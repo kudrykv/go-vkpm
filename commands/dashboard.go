@@ -31,7 +31,7 @@ func Dashboard(api *services.API) *cli.Command {
 			group.Go(getSalary(cctx, api, thisMonth, &thisMonthSalary))
 			group.Go(getSalary(cctx, api, lastMonth, &lastMonthSalary))
 			group.Go(getHistory(cctx, api, thisMonth, &historyEntries))
-			group.Go(getVacationsHolidays(cctx, api, thisMonthSalary, &vacations, &holidays))
+			group.Go(getVacationsHolidays(cctx, api, lastMonth, &vacations, &holidays))
 
 			if err := group.Wait(); err != nil {
 				return fmt.Errorf("group: %w", err)
@@ -50,11 +50,11 @@ func Dashboard(api *services.API) *cli.Command {
 }
 
 func getVacationsHolidays(
-	cctx context.Context, api *services.API, salary types.Salary, vacations *types.Vacations, holidays *types.Holidays,
+	cctx context.Context, api *services.API, moment time.Time, vacations *types.Vacations, holidays *types.Holidays,
 ) func() error {
 	return func() error {
 		var err error
-		if *vacations, *holidays, err = api.Vacations(cctx, salary.Year); err != nil {
+		if *vacations, *holidays, err = api.Vacations(cctx, moment.Year()); err != nil {
 			return fmt.Errorf("vacations: %w", err)
 		}
 
