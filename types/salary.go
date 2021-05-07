@@ -50,8 +50,13 @@ func (s Salary) StringHoursReport() string {
 	return "Reported: " + f2s(s.HoursByCurrDay) + " of " + f2s(s.WorkingDaysInMonth)
 }
 
-func f2s(f float64) string {
-	return strconv.FormatFloat(f, 'f', 2, 64)
+func f2s(f float64, precision ...int) string {
+	prec := 2
+	if len(precision) > 0 {
+		prec = precision[0]
+	}
+
+	return strconv.FormatFloat(f, 'f', prec, 64)
 }
 
 var (

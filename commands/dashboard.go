@@ -18,19 +18,19 @@ func Dashboard(api *services.API) *cli.Command {
 			var (
 				thisMonthSalary types.Salary
 				lastMonthSalary types.Salary
-				historyEntries  types.ReportEntries
+				history         types.ReportEntries
 				holidays        types.Holidays
 				vacations       types.Vacations
-			)
 
-			thisMonth := time.Now()
-			lastMonth := thisMonth.AddDate(0, -1, 0)
+				thisMonth = time.Now()
+				lastMonth = thisMonth.AddDate(0, -1, 0)
+			)
 
 			group, cctx := errgroup.WithContext(c.Context)
 
 			group.Go(getSalary(cctx, api, thisMonth, &thisMonthSalary))
 			group.Go(getSalary(cctx, api, lastMonth, &lastMonthSalary))
-			group.Go(getHistory(cctx, api, thisMonth, &historyEntries))
+			group.Go(getHistory(cctx, api, thisMonth, &history))
 			group.Go(getVacationsHolidays(cctx, api, lastMonth, &vacations, &holidays))
 
 			if err := group.Wait(); err != nil {
@@ -40,9 +40,7 @@ func Dashboard(api *services.API) *cli.Command {
 			_, _ = fmt.Fprintln(c.App.Writer, thisMonthSalary.StringTotalPaid())
 			_, _ = fmt.Fprintln(c.App.Writer, lastMonthSalary.StringTotalPaid())
 			_, _ = fmt.Fprintln(c.App.Writer)
-			_, _ = fmt.Fprintln(c.App.Writer, thisMonthSalary.StringHoursReport())
-
-			_, _ = fmt.Fprintln(c.App.Writer, historyEntries)
+			_, _ = fmt.Fprintln(c.App.Writer, types.NewMonthInfo(thisMonth, thisMonthSalary, vacations, holidays, history))
 
 			return nil
 		},
@@ -66,7 +64,7 @@ func getHistory(cctx context.Context, api *services.API, moment time.Time, entri
 	return func() error {
 		var err error
 		if *entries, err = api.History(cctx, moment.Year(), moment.Month()); err != nil {
-			return fmt.Errorf("history: %w", err)
+			return fmt.Errorf("history in %d %v: %w", moment.Year(), moment.Month(), err)
 		}
 
 		return nil
@@ -77,7 +75,7 @@ func getSalary(cctx context.Context, api *services.API, moment time.Time, salary
 	return func() error {
 		var err error
 		if *salary, err = api.Salary(cctx, moment.Year(), int(moment.Month())); err != nil {
-			return fmt.Errorf("salary: %w", err)
+			return fmt.Errorf("salary in %d %v: %w", moment.Year(), moment.Month(), err)
 		}
 
 		return nil

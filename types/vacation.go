@@ -9,6 +9,30 @@ import (
 )
 
 type Vacations []Vacation
+
+func (v Vacations) Vacated(day time.Time) bool {
+	for _, vac := range v {
+		if vac.StartDate.Year() == day.Year() && vac.StartDate.Month() == day.Month() && vac.StartDate.Day() == day.Day() {
+			return true
+		}
+
+		if vac.EndDate.IsZero() {
+			return false
+		}
+
+		cur := vac.StartDate
+		for i := 0; i < int(vac.Span/(time.Duration(24)*time.Hour)); i++ {
+			if cur.Year() == day.Year() && cur.Month() == day.Month() && cur.Day() == day.Day() {
+				return true
+			}
+
+			cur = cur.AddDate(0, 0, 1)
+		}
+	}
+
+	return false
+}
+
 type Vacation struct {
 	ID        string
 	Type      string

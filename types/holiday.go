@@ -10,6 +10,17 @@ import (
 )
 
 type Holidays []Holiday
+
+func (h Holidays) Holiday(day time.Time) bool {
+	for _, holiday := range h {
+		if holiday.Date.Year() == day.Year() && holiday.Date.Month() == day.Month() && holiday.Date.Day() == day.Day() {
+			return true
+		}
+	}
+
+	return false
+}
+
 type Holiday struct {
 	Name string
 	Date time.Time

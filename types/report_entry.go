@@ -9,6 +9,17 @@ import (
 )
 
 type ReportEntries []ReportEntry
+
+func (e ReportEntries) Reported(d time.Time) bool {
+	for _, ee := range e {
+		if ee.ReportDate.Year() == d.Year() && ee.ReportDate.Month() == d.Month() && ee.ReportDate.Day() == d.Day() {
+			return true
+		}
+	}
+
+	return false
+}
+
 type ReportEntry struct {
 	ID          string
 	PublishDate time.Time
