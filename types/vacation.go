@@ -10,9 +10,9 @@ import (
 
 type Vacations []Vacation
 
-func (v Vacations) Vacated(day time.Time) bool {
+func (v Vacations) Vacated(day Date) bool {
 	for _, vac := range v {
-		if vac.StartDate.Year() == day.Year() && vac.StartDate.Month() == day.Month() && vac.StartDate.Day() == day.Day() {
+		if vac.StartDate.Equal(day) {
 			return true
 		}
 
@@ -22,7 +22,7 @@ func (v Vacations) Vacated(day time.Time) bool {
 
 		cur := vac.StartDate
 		for i := 0; i < int(vac.Span/(time.Duration(24)*time.Hour)); i++ {
-			if cur.Year() == day.Year() && cur.Month() == day.Month() && cur.Day() == day.Day() {
+			if cur.Equal(day) {
 				return true
 			}
 
@@ -36,8 +36,8 @@ func (v Vacations) Vacated(day time.Time) bool {
 type Vacation struct {
 	ID        string
 	Type      string
-	StartDate time.Time
-	EndDate   time.Time
+	StartDate Date
+	EndDate   Date
 	Span      time.Duration
 	Status    string
 	Paid      bool
@@ -83,7 +83,7 @@ func NewVacationsFromHTMLNode(doc *html.Node) (Vacations, error) {
 
 		vac.Paid = paidStr == "Paid"
 
-		if vac.StartDate, err = getTimeFromNode(node, `2 January 2006`, `./td[3]`); err != nil {
+		if vac.StartDate, err = getDateFromNode(node, `2 January 2006`, `./td[3]`); err != nil {
 			return nil, fmt.Errorf("get time from node: %w", err)
 		}
 
@@ -92,7 +92,7 @@ func NewVacationsFromHTMLNode(doc *html.Node) (Vacations, error) {
 		}
 
 		if str != "-" {
-			if vac.EndDate, err = time.Parse("2 January 2006", str); err != nil {
+			if vac.EndDate, err = ParseDate("2 January 2006", str); err != nil {
 				return nil, fmt.Errorf("time parse: %w", err)
 			}
 		}

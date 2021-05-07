@@ -3,7 +3,6 @@ package commands
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/kudrykv/go-vkpm/services"
 	"github.com/kudrykv/go-vkpm/types"
@@ -22,7 +21,7 @@ func Dashboard(api *services.API) *cli.Command {
 				holidays        types.Holidays
 				vacations       types.Vacations
 
-				thisMonth = time.Now()
+				thisMonth = types.Today()
 				lastMonth = thisMonth.AddDate(0, -1, 0)
 			)
 
@@ -48,7 +47,7 @@ func Dashboard(api *services.API) *cli.Command {
 }
 
 func getVacationsHolidays(
-	cctx context.Context, api *services.API, moment time.Time, vacations *types.Vacations, holidays *types.Holidays,
+	cctx context.Context, api *services.API, moment types.Date, vacations *types.Vacations, holidays *types.Holidays,
 ) func() error {
 	return func() error {
 		var err error
@@ -60,7 +59,7 @@ func getVacationsHolidays(
 	}
 }
 
-func getHistory(cctx context.Context, api *services.API, moment time.Time, entries *types.ReportEntries) func() error {
+func getHistory(cctx context.Context, api *services.API, moment types.Date, entries *types.ReportEntries) func() error {
 	return func() error {
 		var err error
 		if *entries, err = api.History(cctx, moment.Year(), moment.Month()); err != nil {
@@ -71,7 +70,7 @@ func getHistory(cctx context.Context, api *services.API, moment time.Time, entri
 	}
 }
 
-func getSalary(cctx context.Context, api *services.API, moment time.Time, salary *types.Salary) func() error {
+func getSalary(cctx context.Context, api *services.API, moment types.Date, salary *types.Salary) func() error {
 	return func() error {
 		var err error
 		if *salary, err = api.Salary(cctx, moment.Year(), int(moment.Month())); err != nil {

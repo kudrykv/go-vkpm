@@ -3,7 +3,6 @@ package types
 import (
 	"errors"
 	"fmt"
-	"time"
 
 	"github.com/antchfx/htmlquery"
 	"golang.org/x/net/html"
@@ -11,9 +10,9 @@ import (
 
 type Holidays []Holiday
 
-func (h Holidays) Holiday(day time.Time) bool {
+func (h Holidays) Holiday(day Date) bool {
 	for _, holiday := range h {
-		if holiday.Date.Year() == day.Year() && holiday.Date.Month() == day.Month() && holiday.Date.Day() == day.Day() {
+		if holiday.Date.Equal(day) {
 			return true
 		}
 	}
@@ -23,7 +22,7 @@ func (h Holidays) Holiday(day time.Time) bool {
 
 type Holiday struct {
 	Name string
-	Date time.Time
+	Date Date
 }
 
 func NewHolidaysFromHTMLNode(doc *html.Node) (Holidays, error) {
@@ -46,7 +45,7 @@ func NewHolidaysFromHTMLNode(doc *html.Node) (Holidays, error) {
 		}
 
 		var h Holiday
-		if h.Date, err = time.Parse(`02 January 2006`, text); err != nil {
+		if h.Date, err = ParseDate(`02 January 2006`, text); err != nil {
 			return nil, fmt.Errorf("parse: %w", err)
 		}
 

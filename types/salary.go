@@ -178,6 +178,20 @@ func getTimeFromNode(doc *html.Node, layout, expr string) (time.Time, error) {
 	return moment, nil
 }
 
+func getDateFromNode(doc *html.Node, layout, expr string) (Date, error) {
+	text, err := getTextFromNode(doc, expr)
+	if err != nil {
+		return Date{}, fmt.Errorf("get text from node: %w", err)
+	}
+
+	moment, err := time.Parse(layout, text)
+	if err != nil {
+		return Date{}, fmt.Errorf("parse time: %w", err)
+	}
+
+	return Date{moment}, nil
+}
+
 func getNumFromString(str string) (float64, error) {
 	numStr := numRegex.FindString(str)
 	if len(numStr) == 0 {

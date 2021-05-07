@@ -10,7 +10,7 @@ import (
 
 type ReportEntries []ReportEntry
 
-func (e ReportEntries) Reported(d time.Time) bool {
+func (e ReportEntries) Reported(d Date) bool {
 	for _, ee := range e {
 		if ee.ReportDate.Year() == d.Year() && ee.ReportDate.Month() == d.Month() && ee.ReportDate.Day() == d.Day() {
 			return true
@@ -22,8 +22,8 @@ func (e ReportEntries) Reported(d time.Time) bool {
 
 type ReportEntry struct {
 	ID          string
-	PublishDate time.Time
-	ReportDate  time.Time
+	PublishDate Date
+	ReportDate  Date
 	ProjectName string
 	Activity    string
 	Name        string
@@ -62,21 +62,33 @@ func NewReportEntriesFromHTMLNode(doc *html.Node) (ReportEntries, error) {
 			}
 		}
 
-		//time.Parse("2006")
-
 		iter2 := []struct {
 			s      *time.Time
 			layout string
 			expr   string
 		}{
-			{&entry.PublishDate, `2 Jan, Mon 15:04`, `./td[2]`},
-			{&entry.ReportDate, `2 Jan, 2006`, `./td[3]`},
+
 			{&entry.StartTime, `15:04`, `./td[9]`},
 			{&entry.EndTime, `15:04`, `./td[10]`},
 		}
 
 		for _, kv := range iter2 {
 			if *kv.s, err = getTimeFromNode(node, kv.layout, kv.expr); err != nil {
+				return nil, fmt.Errorf("get time from node: %w", err)
+			}
+		}
+
+		iter3 := []struct {
+			s      *Date
+			layout string
+			expr   string
+		}{
+			{&entry.PublishDate, `2 Jan, Mon 15:04`, `./td[2]`},
+			{&entry.ReportDate, `2 Jan, 2006`, `./td[3]`},
+		}
+
+		for _, kv := range iter3 {
+			if *kv.s, err = getDateFromNode(node, kv.layout, kv.expr); err != nil {
 				return nil, fmt.Errorf("get time from node: %w", err)
 			}
 		}
