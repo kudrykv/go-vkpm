@@ -25,9 +25,14 @@ func NewMonthInfo(date Date, s Salary, v Vacations, h Holidays, history ReportEn
 func (m MonthInfo) String() string {
 	him := m.salary.WorkingDaysInMonth * 8
 	wd := len(m.workingDays())
+	nrep := m.needReporting()
 
 	s := fmt.Sprintf("Hours in month: %.f (%.f days)\n", him, m.salary.WorkingDaysInMonth)
-	s += fmt.Sprintf("Reported as of today: %.1f / %d", m.salary.HoursByCurrDay, wd*8)
+	s += fmt.Sprintf("Reported as of today: %.1f / %d\n", m.salary.HoursByCurrDay, wd*8)
+
+	if len(nrep) > 0 {
+		s += fmt.Sprint("Need to report for ", nrep, "\n")
+	}
 
 	return s
 }
@@ -35,8 +40,13 @@ func (m MonthInfo) String() string {
 func (m MonthInfo) workingDays() []Date {
 	days := make([]Date, 0, m.moment.Day())
 
-	cursor := m.moment.AddDate(0, 0, -m.moment.Day()+1)
+	cursor := m.moment.AddDate(0, 0, -m.moment.Day())
 	for i := 0; i < m.moment.Day(); i++ {
+		cursor = cursor.AddDate(0, 0, 1)
+
+		if cursor.IsWeekend() {
+			continue
+		}
 
 		if m.vacations.Vacated(cursor) {
 			continue
@@ -47,14 +57,13 @@ func (m MonthInfo) workingDays() []Date {
 		}
 
 		days = append(days, cursor)
-		cursor = cursor.AddDate(0, 0, 1)
 	}
 
 	return days
 }
 
-func (m MonthInfo) needReporting() []Date {
-	var need []Date
+func (m MonthInfo) needReporting() Dates {
+	var need Dates
 
 	for _, day := range m.workingDays() {
 		if m.history.Reported(day) {

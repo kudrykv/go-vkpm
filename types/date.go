@@ -1,6 +1,24 @@
 package types
 
-import "time"
+import (
+	"strings"
+	"time"
+)
+
+type Dates []Date
+
+func (d Dates) String() string {
+	if len(d) == 0 {
+		return ""
+	}
+
+	ss := make([]string, 0, len(d))
+	for _, date := range d {
+		ss = append(ss, date.String())
+	}
+
+	return strings.Join(ss, ", ")
+}
 
 type Date struct {
 	time.Time
@@ -15,6 +33,14 @@ func (d Date) Equal(o Date) bool {
 
 func (d Date) AddDate(years, months, day int) Date {
 	return Date{d.Time.AddDate(years, months, day)}
+}
+
+func (d Date) IsWeekend() bool {
+	return d.Weekday() == time.Saturday || d.Weekday() == time.Sunday
+}
+
+func (d Date) String() string {
+	return d.Time.Format("Monday 2")
 }
 
 func ParseDate(layout, value string) (Date, error) {
