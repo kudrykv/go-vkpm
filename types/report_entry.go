@@ -1,11 +1,22 @@
 package types
 
 import (
+	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/antchfx/htmlquery"
 	"golang.org/x/net/html"
+)
+
+const (
+	ActivityEstimate    = "estimate"
+	ActivityDevelopment = "development"
+	ActivityTesting     = "testing"
+	ActivityBugfixing   = "bugfixing"
+	ActivityManagement  = "management"
+	ActivityAnalysis    = "analysis"
 )
 
 type ReportEntries []ReportEntry
@@ -32,6 +43,102 @@ type ReportEntry struct {
 	StartTime   time.Time
 	EndTime     time.Time
 	Span        time.Duration
+}
+
+func (e ReportEntry) IsEmptyRange() bool {
+	return e.StartTime.IsZero() && e.EndTime.IsZero()
+}
+
+func (e ReportEntry) IsSpanAndRangePresent() bool {
+	return !e.StartTime.IsZero() && !e.EndTime.IsZero() && e.Span > 0
+}
+
+func (e ReportEntry) IsSpanAndRangeAbsent() bool {
+	return e.StartTime.IsZero() && e.EndTime.IsZero() && e.Span == 0
+}
+
+var (
+	ErrNoStartTime    = errors.New("no start time")
+	ErrNoEndTime      = errors.New("no end time")
+	ErrStartLargerEnd = errors.New("start time is greater or equal than end time")
+	ErrTimeNotRounded = errors.New("time must be rounded to 10 minutes")
+	ErrStatusNegative = errors.New("status is less than zero")
+	ErrStatusMore100  = errors.New("status is larger than 100")
+	ErrStatusNotRound = errors.New("must be rounded to 10")
+	ErrBadActivity    = errors.New("bad activity")
+)
+
+func (e ReportEntry) TestBrokenRange() error {
+	if e.IsEmptyRange() {
+		return nil
+	}
+
+	if e.StartTime.IsZero() && !e.EndTime.IsZero() {
+		return ErrNoStartTime
+	}
+
+	if !e.StartTime.IsZero() && e.EndTime.IsZero() {
+		return ErrNoEndTime
+	}
+
+	if e.StartTime.After(e.EndTime) || e.StartTime.Equal(e.EndTime) {
+		return ErrStartLargerEnd
+	}
+
+	if !e.StartTime.Round(10 * time.Minute).Equal(e.StartTime) {
+		return fmt.Errorf("start time: %w", ErrTimeNotRounded)
+	}
+
+	if !e.EndTime.Round(10 * time.Minute).Equal(e.EndTime) {
+		return fmt.Errorf("end time: %w", ErrTimeNotRounded)
+	}
+
+	return nil
+}
+
+func (e ReportEntry) TestStatus() error {
+	if e.Status < 0 {
+		return ErrStatusNegative
+	}
+
+	if e.Status > 100 {
+		return ErrStatusMore100
+	}
+
+	if e.Status%10 != 0 {
+		return ErrStatusNotRound
+	}
+
+	return nil
+}
+
+func (e ReportEntry) SetActivity(short string) (ReportEntry, error) {
+	activities := []string{
+		ActivityEstimate, ActivityDevelopment, ActivityTesting, ActivityBugfixing, ActivityManagement, ActivityAnalysis,
+	}
+
+	for _, activity := range activities {
+		if idx := strings.Index(strings.ToLower(activity), strings.ToLower(short)); idx != 0 {
+			continue
+		}
+
+		e.Activity = activity
+
+		return e, nil
+	}
+
+	return e, fmt.Errorf("%v: %w", short, ErrBadActivity)
+}
+
+func (e ReportEntry) UpdateProjectName(available Projects) (ReportEntry, error) {
+	project, err := available.Match(e.ProjectName)
+	if err != nil {
+		return e, fmt.Errorf("match: %w", err)
+	}
+
+	e.ProjectName = project.Name
+
+	return e, nil
 }
 
 func NewReportEntriesFromHTMLNode(doc *html.Node) (ReportEntries, error) {

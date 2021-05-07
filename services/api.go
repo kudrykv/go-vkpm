@@ -181,6 +181,20 @@ func (a *API) VacationsHolidays(ctx context.Context, year int) (types.Vacations,
 	return vacations, holidays, nil
 }
 
+func (a *API) Projects(ctx context.Context) (types.Projects, error) {
+	doc, err := a.doParse(ctx, http.MethodGet, "/report/", nil)
+	if err != nil {
+		return nil, fmt.Errorf("do parse: %w", err)
+	}
+
+	projects, err := types.NewProjectsFromHTMLNode(doc)
+	if err != nil {
+		return nil, fmt.Errorf("new projects from html node: %w", err)
+	}
+
+	return projects, nil
+}
+
 func (a *API) doParse(ctx context.Context, method, url string, body url.Values) (*html.Node, error) {
 	bts, resp, err := a.do(ctx, method, "https://"+a.cfg.Domain+url, body, a.h())
 	if err != nil {

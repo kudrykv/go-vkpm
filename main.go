@@ -61,6 +61,7 @@ func main() {
 			commands.Config(),
 			commands.Login(config, api),
 			commands.Dashboard(api),
+			commands.Report(config, api),
 		},
 	}
 
@@ -86,10 +87,23 @@ func EnsureConfigDir() (string, error) {
 
 // nolint:forbidigo
 func exit(msg string, err error) {
-	if len(msg) == 0 {
-		fmt.Println(err)
-	} else {
-		fmt.Println(msg+":", err)
+	if len(msg) > 0 {
+		err = fmt.Errorf("%s: %w", msg, err)
+	}
+
+	split := strings.Split(err.Error(), ":")
+
+	indent := 0
+	for i, msg := range split {
+		fmt.Print(strings.Repeat(" ", indent))
+
+		if i+1 == len(split) {
+			fmt.Println(msg)
+		} else {
+			fmt.Println(msg + ":")
+		}
+
+		indent += 2
 	}
 
 	os.Exit(1)
