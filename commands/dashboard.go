@@ -54,7 +54,7 @@ func getVacationsHolidays(
 ) func() error {
 	return func() error {
 		var err error
-		if *vacations, *holidays, err = api.Vacations(cctx, moment.Year()); err != nil {
+		if *vacations, *holidays, err = api.VacationsHolidays(cctx, moment.Year()); err != nil {
 			return fmt.Errorf("vacations: %w", err)
 		}
 

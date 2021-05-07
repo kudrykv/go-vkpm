@@ -160,7 +160,7 @@ func (a *API) History(ctx context.Context, year int, month time.Month) (types.Re
 	return entries, nil
 }
 
-func (a *API) Vacations(ctx context.Context, year int) (types.Vacations, types.Holidays, error) {
+func (a *API) VacationsHolidays(ctx context.Context, year int) (types.Vacations, types.Holidays, error) {
 	body := url.Values{"year": {strconv.Itoa(year)}, "year_changed": {"true"}}
 
 	doc, err := a.doParse(ctx, http.MethodPost, "/vacations/", body)
