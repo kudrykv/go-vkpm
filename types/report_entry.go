@@ -118,7 +118,7 @@ func (e ReportEntry) SetActivity(short string) (ReportEntry, error) {
 	}
 
 	for _, activity := range activities {
-		if idx := strings.Index(strings.ToLower(activity), strings.ToLower(short)); idx != 0 {
+		if strings.HasPrefix(strings.ToLower(activity), strings.ToLower(short)) {
 			continue
 		}
 
@@ -138,6 +138,10 @@ func (e ReportEntry) UpdateProjectName(available Projects) (ReportEntry, error) 
 
 	e.ProjectName = project.Name
 
+	return e, nil
+}
+
+func (e ReportEntry) Align(history ReportEntries) (ReportEntry, error) {
 	return e, nil
 }
 

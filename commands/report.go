@@ -54,6 +54,16 @@ func Report(cfg types.Config, api *services.API) *cli.Command {
 				return err
 			}
 
+			now := time.Now()
+			history, err := api.History(c.Context, now.Year(), now.Month())
+			if err != nil {
+				return fmt.Errorf("history: %w", err)
+			}
+
+			if entry, err = entry.Align(history); err != nil {
+				return fmt.Errorf("align: %w", err)
+			}
+
 			_, _ = fmt.Fprintln(c.App.Writer, entry)
 
 			return nil

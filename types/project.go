@@ -51,6 +51,7 @@ func (p Projects) String() string {
 }
 
 type Project struct {
+	ID   string
 	Name string
 }
 
@@ -67,6 +68,12 @@ func NewProjectsFromHTMLNode(doc *html.Node) (Projects, error) {
 
 		if project.Name, err = getTextFromNode(node, `.`); err != nil {
 			return nil, fmt.Errorf("get text from node: %w", err)
+		}
+
+		for _, attr := range node.Attr {
+			if attr.Key == "value" {
+				project.ID = attr.Val
+			}
 		}
 
 		projects = append(projects, project)
