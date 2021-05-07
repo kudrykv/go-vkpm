@@ -173,7 +173,12 @@ func (a *API) Vacations(ctx context.Context, year int) (types.Vacations, types.H
 		return nil, nil, fmt.Errorf("new vacations from html node: %w", err)
 	}
 
-	return vacations, nil, nil
+	holidays, err := types.NewHolidaysFromHTMLNode(doc)
+	if err != nil {
+		return nil, nil, fmt.Errorf("new holidays from html node: %w", err)
+	}
+
+	return vacations, holidays, nil
 }
 
 func (a *API) doParse(ctx context.Context, method, url string, body url.Values) (*html.Node, error) {

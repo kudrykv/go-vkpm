@@ -1,5 +1,50 @@
 package types
 
+import (
+	"errors"
+	"fmt"
+	"time"
+
+	"github.com/antchfx/htmlquery"
+	"golang.org/x/net/html"
+)
+
 type Holidays []Holiday
 type Holiday struct {
+	Name string
+	Date time.Time
+}
+
+func NewHolidaysFromHTMLNode(doc *html.Node) (Holidays, error) {
+	nodes, err := htmlquery.QueryAll(doc, `//div[@class="holidays_list"]//tbody/tr`)
+	if err != nil {
+		return nil, fmt.Errorf("query all: %w", err)
+	}
+
+	holidays := make(Holidays, 0, len(nodes))
+
+	var text string
+
+	for _, node := range nodes {
+		if text, err = getTextFromNode(node, `./td[2]`); err != nil && !errors.Is(err, ErrNodeNotFound) {
+			return nil, fmt.Errorf("get text from node: %w", err)
+		}
+
+		if len(text) == 0 {
+			continue
+		}
+
+		var h Holiday
+		if h.Date, err = time.Parse(`02 January 2006`, text); err != nil {
+			return nil, fmt.Errorf("parse: %w", err)
+		}
+
+		if h.Name, err = getTextFromNode(node, `./td[3]`); err != nil {
+			return nil, fmt.Errorf("get text from node: %w", err)
+		}
+
+		holidays = append(holidays, h)
+	}
+
+	return holidays, nil
 }

@@ -145,11 +145,15 @@ func getIntFromNode(doc *html.Node, expr string) (int, error) {
 func getTextFromNode(doc *html.Node, expr string) (string, error) {
 	node, err := htmlquery.Query(doc, expr)
 	if err != nil {
-		return "", fmt.Errorf("query: %w", err)
+		return "", fmt.Errorf("query '%s': %w", expr, err)
 	}
 
 	if node == nil {
-		return "", fmt.Errorf("nil node: %w", ErrNodeNotFound)
+		return "", fmt.Errorf("nil node '%s': %w", expr, ErrNodeNotFound)
+	}
+
+	if node.FirstChild == nil {
+		return "", nil
 	}
 
 	return strings.TrimSpace(node.FirstChild.Data), nil
