@@ -33,6 +33,7 @@ var (
 	ErrNoID      = errors.New("no id found")
 	ErrNonEmpty  = errors.New("expected empty response")
 	ErrBadStatus = errors.New("bad status")
+	ErrNoReport  = errors.New("no report found")
 )
 
 func NewAPI(hc *http.Client, cfg types.Config) *API {
@@ -210,7 +211,21 @@ func (a *API) Report(ctx context.Context, entry types.ReportEntry) (types.Report
 		return entry, fmt.Errorf(resp.Status+": %w", ErrBadStatus)
 	}
 
-	return entry, nil
+	history, err := a.History(ctx, entry.ReportDate.Year(), entry.ReportDate.Month())
+	if err != nil {
+		return entry, fmt.Errorf("history: %w", err)
+	}
+
+	today := history.FindLatestForToday(entry.ReportDate)
+	if today == nil {
+		return entry, fmt.Errorf("did not find reported: %w", ErrNoReport)
+	}
+
+	if !today.IsSame(entry) {
+		return entry, fmt.Errorf("report didn't work: %w", ErrNoReport)
+	}
+
+	return *today, nil
 }
 
 func (a *API) doParse(ctx context.Context, method, url string, body url.Values) (*html.Node, error) {

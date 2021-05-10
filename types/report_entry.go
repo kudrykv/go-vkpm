@@ -340,6 +340,17 @@ func (e ReportEntry) GetActivity() string {
 	return mapActivityEnum[e.Activity]
 }
 
+func (e ReportEntry) IsSame(o ReportEntry) bool {
+	return e.ReportDate.Equal(o.ReportDate) &&
+		e.Project.Name == o.Project.Name &&
+		strings.EqualFold(e.Activity, o.Activity) &&
+		e.Name == o.Name &&
+		e.Description == o.Description &&
+		e.Status == o.Status &&
+		e.StartTime.Hour() == o.StartTime.Hour() && e.StartTime.Minute() == o.StartTime.Minute() &&
+		e.EndTime.Hour() == o.EndTime.Hour() && e.EndTime.Minute() == o.EndTime.Minute()
+}
+
 func NewReportEntriesFromHTMLNode(doc *html.Node) (ReportEntries, error) {
 	nodes, err := htmlquery.QueryAll(doc, `//table[@id="history"]//tbody/tr`)
 	if err != nil {
