@@ -3,6 +3,7 @@ package types
 import (
 	"errors"
 	"fmt"
+	"net/url"
 	"sort"
 	"strconv"
 	"strings"
@@ -19,6 +20,24 @@ const (
 	ActivityBugfixing   = "bugfixing"
 	ActivityManagement  = "management"
 	ActivityAnalysis    = "analysis"
+
+	ActivityENumEstimate    = "0"
+	ActivityENumDevelopment = "1"
+	ActivityENumTesting     = "2"
+	ActivityENumBugfixing   = "3"
+	ActivityENumManagement  = "4"
+	ActivityENumAnalysis    = "5"
+)
+
+var (
+	mapActivityEnum = map[string]string{
+		ActivityEstimate:    ActivityENumEstimate,
+		ActivityDevelopment: ActivityENumDevelopment,
+		ActivityTesting:     ActivityENumTesting,
+		ActivityBugfixing:   ActivityENumBugfixing,
+		ActivityManagement:  ActivityENumManagement,
+		ActivityAnalysis:    ActivityENumAnalysis,
+	}
 )
 
 type ReportEntries []ReportEntry
@@ -105,6 +124,9 @@ var (
 	ErrStatusNotRound = errors.New("must be rounded to 10")
 	ErrBadActivity    = errors.New("bad activity")
 	ErrOverlaps       = errors.New("overlaps with existing")
+	ErrNoTitle        = errors.New("no title")
+	ErrNoMessage      = errors.New("no message")
+	ErrNoRange        = errors.New("range must be set")
 )
 
 func (e ReportEntry) TestBrokenRange() error {
@@ -151,13 +173,27 @@ func (e ReportEntry) TestStatus() error {
 	return nil
 }
 
+func (e ReportEntry) TestActivity() error {
+	activities := []string{
+		ActivityEstimate, ActivityDevelopment, ActivityTesting, ActivityBugfixing, ActivityManagement, ActivityAnalysis,
+	}
+
+	for _, activity := range activities {
+		if activity == e.Activity {
+			return nil
+		}
+	}
+
+	return ErrBadActivity
+}
+
 func (e ReportEntry) SetActivity(short string) (ReportEntry, error) {
 	activities := []string{
 		ActivityEstimate, ActivityDevelopment, ActivityTesting, ActivityBugfixing, ActivityManagement, ActivityAnalysis,
 	}
 
 	for _, activity := range activities {
-		if !strings.HasPrefix(strings.ToLower(activity), strings.ToLower(short)) {
+		if !strings.HasPrefix(activity, strings.ToLower(short)) {
 			continue
 		}
 
@@ -246,6 +282,62 @@ func (e ReportEntry) Overlaps(o ReportEntry) bool {
 	}
 
 	return false
+}
+
+func (e ReportEntry) Test() error {
+	if e.ReportDate.IsZero() {
+		return ErrNoReportDate
+	}
+
+	if len(e.Project.ID) == 0 {
+		return ErrProjNotFound
+	}
+
+	if err := e.TestActivity(); err != nil {
+		return fmt.Errorf("test activity: %w", err)
+	}
+
+	if len(e.Name) == 0 {
+		return ErrNoTitle
+	}
+
+	if len(e.Description) == 0 {
+		return ErrNoMessage
+	}
+
+	if err := e.TestStatus(); err != nil {
+		return fmt.Errorf("test status: %w", err)
+	}
+
+	if e.IsEmptyRange() {
+		return ErrNoRange
+	}
+
+	return nil
+}
+
+func (e ReportEntry) URLValues() (url.Values, error) {
+	if err := e.Test(); err != nil {
+		return nil, fmt.Errorf("test: %w", err)
+	}
+
+	return url.Values{
+		"report_date":          {e.ReportDate.Format("2006-01-02")},
+		"project_id":           {e.Project.ID},
+		"activity":             {e.GetActivity()},
+		"task_name":            {e.Name},
+		"task_desc":            {e.Description},
+		"status":               {strconv.Itoa(e.Status)},
+		"start_report_hours":   {e.StartTime.Format("15")},
+		"start_report_minutes": {e.StartTime.Format("04")},
+		"end_report_hours":     {e.EndTime.Format("15")},
+		"end_report_minutes":   {e.EndTime.Format("04")},
+		"overtime":             {"1"},
+	}, nil
+}
+
+func (e ReportEntry) GetActivity() string {
+	return mapActivityEnum[e.Activity]
 }
 
 func NewReportEntriesFromHTMLNode(doc *html.Node) (ReportEntries, error) {

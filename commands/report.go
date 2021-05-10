@@ -75,6 +75,10 @@ func Report(cfg types.Config, api *services.API) *cli.Command {
 				return fmt.Errorf("align: %w", err)
 			}
 
+			if entry, err = api.Report(c.Context, entry); err != nil {
+				return fmt.Errorf("report: %w", err)
+			}
+
 			_, _ = fmt.Fprintln(c.App.Writer, entry)
 
 			return nil

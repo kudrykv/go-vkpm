@@ -195,6 +195,24 @@ func (a *API) Projects(ctx context.Context) (types.Projects, error) {
 	return projects, nil
 }
 
+func (a *API) Report(ctx context.Context, entry types.ReportEntry) (types.ReportEntry, error) {
+	body, err := entry.URLValues()
+	if err != nil {
+		return entry, fmt.Errorf("url values: %w", err)
+	}
+
+	bts, resp, err := a.do(ctx, http.MethodPost, "https://"+a.cfg.Domain+"/report/", body, a.h())
+	if err != nil {
+		return entry, fmt.Errorf("do: %w", err)
+	}
+
+	if len(bts) > 0 {
+		return entry, fmt.Errorf(resp.Status+": %w", ErrBadStatus)
+	}
+
+	return entry, nil
+}
+
 func (a *API) doParse(ctx context.Context, method, url string, body url.Values) (*html.Node, error) {
 	bts, resp, err := a.do(ctx, method, "https://"+a.cfg.Domain+url, body, a.h())
 	if err != nil {
