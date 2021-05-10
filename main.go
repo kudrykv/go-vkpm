@@ -17,28 +17,9 @@ import (
 func main() {
 	ctx := context.Background()
 
-	dir, err := config.EnsureDir()
+	cfg, err := config.New("", "")
 	if err != nil {
-		exit("ensure config dir", err)
-	}
-
-	var cfg config.Config
-	join := strings.Join([]string{dir, config.Filename}, string(os.PathSeparator))
-
-	if _, err = os.Stat(join); os.IsNotExist(err) {
-		file, err := os.Create(join)
-		if err != nil {
-			exit("create", err)
-		}
-
-		if err = file.Close(); err != nil {
-			exit("close", err)
-		}
-	} else {
-		cfg, err = config.Read(dir, config.Filename)
-		if err != nil {
-			exit("read config", err)
-		}
+		exit("new config: %w", err)
 	}
 
 	api := services.NewAPI(&http.Client{
