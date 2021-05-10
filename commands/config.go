@@ -2,22 +2,28 @@ package commands
 
 import (
 	"fmt"
+	"regexp"
 
 	"github.com/kudrykv/go-vkpm/config"
 	"github.com/urfave/cli/v2"
 )
 
 const (
-	fDomain  = "domain"
-	fDefProj = "default-project"
+	flagDomain  = "domain"
+	flagDefProj = "defproj"
+)
+
+var (
+	httpsRegexp = regexp.MustCompile(`^https?://`)
 )
 
 func Config(cfg config.Config) *cli.Command {
 	return &cli.Command{
-		Name: "config",
+		Name:  "config",
+		Usage: "update vkpm config",
 		Flags: []cli.Flag{
-			&cli.StringFlag{Name: fDomain},
-			&cli.StringFlag{Name: fDefProj},
+			&cli.StringFlag{Name: flagDomain, Usage: "domain to use, e.g., domain.com"},
+			&cli.StringFlag{Name: flagDefProj, Usage: "report default project"},
 		},
 
 		Action: func(ctx *cli.Context) error {
@@ -26,11 +32,15 @@ func Config(cfg config.Config) *cli.Command {
 				return fmt.Errorf("ensure config dir: %w", err)
 			}
 
-			if domain := ctx.String(fDomain); len(domain) > 0 {
+			if domain := ctx.String(flagDomain); len(domain) > 0 {
+				if httpsRegexp.MatchString(domain) {
+					domain = httpsRegexp.ReplaceAllString(domain, "")
+				}
+
 				cfg.Domain = domain
 			}
 
-			if defProj := ctx.String(fDefProj); len(defProj) > 0 {
+			if defProj := ctx.String(flagDefProj); len(defProj) > 0 {
 				cfg.DefaultProject = defProj
 			}
 
