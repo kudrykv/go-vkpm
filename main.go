@@ -23,7 +23,7 @@ func main() {
 	}
 
 	var cfg config.Config
-	join := strings.Join([]string{dir, "config.yml"}, string(os.PathSeparator))
+	join := strings.Join([]string{dir, config.Filename}, string(os.PathSeparator))
 
 	if _, err = os.Stat(join); os.IsNotExist(err) {
 		file, err := os.Create(join)
@@ -35,7 +35,7 @@ func main() {
 			exit("close", err)
 		}
 	} else {
-		cfg, err = config.Read(dir, "config.yml")
+		cfg, err = config.Read(dir, config.Filename)
 		if err != nil {
 			exit("read config", err)
 		}
