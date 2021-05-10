@@ -4,9 +4,9 @@ import (
 	"bufio"
 	"fmt"
 	"os"
-	"strings"
 	"syscall"
 
+	"github.com/kudrykv/go-vkpm/commands/before"
 	"github.com/kudrykv/go-vkpm/config"
 	"github.com/kudrykv/go-vkpm/services"
 	"github.com/urfave/cli/v2"
@@ -16,10 +16,13 @@ import (
 func Login(cfg config.Config, api *services.API) *cli.Command {
 	// nolint: forbidigo
 	return &cli.Command{
-		Name: "login",
+		Name:  "login",
+		Usage: "sign in into the system",
+
+		Before: before.IsDomainPresent(cfg),
 
 		Action: func(ctx *cli.Context) error {
-			dir, err := EnsureConfigDir()
+			dir, err := config.EnsureDir()
 			if err != nil {
 				return fmt.Errorf("ensure config dir: %w", err)
 			}
@@ -55,19 +58,4 @@ func Login(cfg config.Config, api *services.API) *cli.Command {
 			return nil
 		},
 	}
-}
-
-func EnsureConfigDir() (string, error) {
-	homeDir, err := os.UserHomeDir()
-	if err != nil {
-		return "", fmt.Errorf("user home dir: %w", err)
-	}
-
-	configRoot := strings.Join([]string{homeDir, ".config", "vkpm"}, string(os.PathSeparator))
-
-	if err = os.MkdirAll(configRoot, os.ModePerm); err != nil {
-		return "", fmt.Errorf("mkdir all: %w", err)
-	}
-
-	return configRoot, nil
 }
