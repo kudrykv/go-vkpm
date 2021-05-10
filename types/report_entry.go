@@ -50,6 +50,22 @@ func (e ReportEntries) FindLatestForToday(date Date) *ReportEntry {
 	return nil
 }
 
+func (e ReportEntries) Overlaps(entry ReportEntry) ReportEntries {
+	var list ReportEntries
+
+	for _, current := range e {
+		if !current.ReportDate.Equal(entry.ReportDate) {
+			continue
+		}
+
+		if current.Overlaps(entry) {
+			list = append(list, current)
+		}
+	}
+
+	return list
+}
+
 type ReportEntry struct {
 	ID          string
 	PublishDate Date
@@ -88,6 +104,7 @@ var (
 	ErrStatusMore100  = errors.New("status is larger than 100")
 	ErrStatusNotRound = errors.New("must be rounded to 10")
 	ErrBadActivity    = errors.New("bad activity")
+	ErrOverlaps       = errors.New("overlaps with existing")
 )
 
 func (e ReportEntry) TestBrokenRange() error {
@@ -140,7 +157,7 @@ func (e ReportEntry) SetActivity(short string) (ReportEntry, error) {
 	}
 
 	for _, activity := range activities {
-		if strings.HasPrefix(strings.ToLower(activity), strings.ToLower(short)) {
+		if !strings.HasPrefix(strings.ToLower(activity), strings.ToLower(short)) {
 			continue
 		}
 
@@ -158,6 +175,10 @@ func (e ReportEntry) UpdateProjectName(available Projects) (ReportEntry, error) 
 		return e, fmt.Errorf("match: %w", err)
 	}
 
+	if len(e.Name) == 0 {
+		e.Name = e.Project.Name
+	}
+
 	return e, nil
 }
 
@@ -168,6 +189,10 @@ func (e ReportEntry) AlignTimes(history ReportEntries) (ReportEntry, error) {
 
 	if e.IsSpanAndRangeAbsent() {
 		return e, fmt.Errorf("no time: %w", ErrNoAnyTime)
+	}
+
+	if e.Span == 0 {
+		e.Span = e.EndTime.Sub(e.StartTime)
 	}
 
 	if e.IsEmptyRange() {
@@ -181,6 +206,10 @@ func (e ReportEntry) AlignTimes(history ReportEntries) (ReportEntry, error) {
 		if e.StartTime.Day() != e.EndTime.Day() {
 			return e, fmt.Errorf("overflow: %w", ErrTimeOverflow)
 		}
+	}
+
+	if entries := history.Overlaps(e); len(entries) > 0 {
+		return e, fmt.Errorf("entries: %w", ErrOverlaps)
 	}
 
 	return e, nil
@@ -197,6 +226,26 @@ func (e ReportEntry) String() string {
 		"\n" +
 		"Name:        " + e.Name + "\n" +
 		"Desc:        " + e.Description
+}
+
+func (e ReportEntry) Overlaps(o ReportEntry) bool {
+	if (e.StartTime.Equal(o.StartTime) || e.StartTime.Before(o.StartTime)) && e.EndTime.After(o.StartTime) {
+		return true
+	}
+
+	if e.StartTime.Before(o.EndTime) && (e.EndTime.Equal(o.EndTime) || e.EndTime.After(o.EndTime)) {
+		return true
+	}
+
+	if e.StartTime.After(o.StartTime) && e.StartTime.Before(o.EndTime) {
+		return true
+	}
+
+	if e.StartTime.Before(o.StartTime) && e.EndTime.After(o.EndTime) {
+		return true
+	}
+
+	return false
 }
 
 func NewReportEntriesFromHTMLNode(doc *html.Node) (ReportEntries, error) {

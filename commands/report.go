@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"time"
@@ -8,6 +9,7 @@ import (
 	"github.com/kudrykv/go-vkpm/services"
 	"github.com/kudrykv/go-vkpm/types"
 	"github.com/urfave/cli/v2"
+	"golang.org/x/sync/errgroup"
 )
 
 const (
@@ -18,6 +20,8 @@ const (
 	flagTo       = "to"
 	flagStatus   = "status"
 	flagActivity = "activity"
+	flagTitle    = "title"
+	flagMessage  = "message"
 )
 
 var (
@@ -31,33 +35,40 @@ func Report(cfg types.Config, api *services.API) *cli.Command {
 	return &cli.Command{
 		Name: "report",
 		Flags: []cli.Flag{
-			&cli.TimestampFlag{Name: flagFor, Layout: "01-02"},
+			&cli.TimestampFlag{Name: flagFor, Layout: "01-02", DefaultText: "not set"},
 			&cli.StringFlag{Name: flagProj},
-			&cli.DurationFlag{Name: flagSpan},
-			&cli.TimestampFlag{Layout: "15:04", Name: flagFrom},
-			&cli.TimestampFlag{Layout: "15:04", Name: flagTo},
+			&cli.DurationFlag{Name: flagSpan, DefaultText: "not set"},
+			&cli.TimestampFlag{Layout: "15:04", Name: flagFrom, DefaultText: "not set"},
+			&cli.TimestampFlag{Layout: "15:04", Name: flagTo, DefaultText: "not set"},
 			&cli.IntFlag{Name: flagStatus, Value: 100},
 			&cli.StringFlag{Name: flagActivity, Value: types.ActivityDevelopment},
+			&cli.StringFlag{Name: flagTitle},
+			&cli.StringFlag{Name: flagMessage, Aliases: []string{"m"}, Required: true},
 		},
 		Action: func(c *cli.Context) error {
 			var (
-				entry types.ReportEntry
-				err   error
+				history  types.ReportEntries
+				projects types.Projects
+				entry    types.ReportEntry
+				err      error
 			)
 
-			projects, err := api.Projects(c.Context)
-			if err != nil {
-				return fmt.Errorf("projects: %w", err)
-			}
-
-			if entry, err = parseEntry(c, cfg, projects); err != nil {
+			if entry, err = parseEntry(c, cfg); err != nil {
 				return err
 			}
 
-			now := time.Now()
-			history, err := api.History(c.Context, now.Year(), now.Month())
-			if err != nil {
-				return fmt.Errorf("history: %w", err)
+			today := types.Today()
+			group, cctx := errgroup.WithContext(c.Context)
+
+			group.Go(getHistory(cctx, api, today, &history))
+			group.Go(getProjects(cctx, api, &projects))
+
+			if err = group.Wait(); err != nil {
+				return fmt.Errorf("group: %w", err)
+			}
+
+			if entry, err = entry.UpdateProjectName(projects); err != nil {
+				return fmt.Errorf("fixup project name: %w", err)
 			}
 
 			if entry, err = entry.AlignTimes(history); err != nil {
@@ -71,8 +82,23 @@ func Report(cfg types.Config, api *services.API) *cli.Command {
 	}
 }
 
-func parseEntry(c *cli.Context, cfg types.Config, projects types.Projects) (types.ReportEntry, error) {
-	entry := types.ReportEntry{Project: types.Project{Name: c.String(flagProj)}}
+func getProjects(cctx context.Context, api *services.API, projects *types.Projects) func() error {
+	return func() error {
+		var err error
+		if *projects, err = api.Projects(cctx); err != nil {
+			return fmt.Errorf("projects: %w", err)
+		}
+
+		return nil
+	}
+}
+
+func parseEntry(c *cli.Context, cfg types.Config) (types.ReportEntry, error) {
+	entry := types.ReportEntry{
+		Project:     types.Project{Name: c.String(flagProj)},
+		Name:        c.String(flagTitle),
+		Description: c.String(flagMessage),
+	}
 
 	if len(entry.Project.Name) == 0 {
 		if entry.Project.Name = cfg.DefaultProject; len(entry.Project.Name) == 0 {
@@ -81,10 +107,6 @@ func parseEntry(c *cli.Context, cfg types.Config, projects types.Projects) (type
 	}
 
 	var err error
-	if entry, err = entry.UpdateProjectName(projects); err != nil {
-		return entry, fmt.Errorf("fixup project name: %w", err)
-	}
-
 	if entry, err = entry.SetActivity(c.String(flagActivity)); err != nil {
 		return entry, fmt.Errorf("test activity: %w", err)
 	}
