@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"strings"
+	"path/filepath"
 
 	"gopkg.in/yaml.v2"
 )
@@ -26,7 +26,7 @@ func EnsureDir() (string, error) {
 		return "", fmt.Errorf("user home dir: %w", err)
 	}
 
-	configRoot := strings.Join([]string{homeDir, ".config", "vkpm"}, string(os.PathSeparator))
+	configRoot := filepath.Join(homeDir, ".config", "vkpm")
 
 	if err = os.MkdirAll(configRoot, os.ModePerm); err != nil {
 		return "", fmt.Errorf("mkdir all: %w", err)
@@ -36,7 +36,7 @@ func EnsureDir() (string, error) {
 }
 
 func Read(path, file string) (Config, error) {
-	bts, err := ioutil.ReadFile(strings.Join([]string{path, file}, string(os.PathSeparator)))
+	bts, err := ioutil.ReadFile(filepath.Join(path, file))
 	if err != nil {
 		return Config{}, fmt.Errorf("read file: %w", err)
 	}
@@ -55,7 +55,7 @@ func Write(path, file string, config Config) error {
 		return fmt.Errorf("marshal: %w", err)
 	}
 
-	if err = ioutil.WriteFile(strings.Join([]string{path, file}, string(os.PathSeparator)), bts, 0600); err != nil {
+	if err = ioutil.WriteFile(filepath.Join(path, file), bts, 0600); err != nil {
 		return fmt.Errorf("write file: %w", err)
 	}
 
