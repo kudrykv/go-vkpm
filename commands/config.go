@@ -27,11 +27,6 @@ func Config(cfg config.Config) *cli.Command {
 		},
 
 		Action: func(ctx *cli.Context) error {
-			dir, err := config.EnsureDir()
-			if err != nil {
-				return fmt.Errorf("ensure config dir: %w", err)
-			}
-
 			if domain := ctx.String(flagDomain); len(domain) > 0 {
 				if httpsRegexp.MatchString(domain) {
 					domain = httpsRegexp.ReplaceAllString(domain, "")
@@ -44,7 +39,7 @@ func Config(cfg config.Config) *cli.Command {
 				cfg.DefaultProject = defProj
 			}
 
-			if err := config.Write(dir, config.Filename, cfg); err != nil {
+			if err := cfg.Write(); err != nil {
 				return fmt.Errorf("write config: %w", err)
 			}
 

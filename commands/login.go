@@ -22,11 +22,6 @@ func Login(cfg config.Config, api *services.API) *cli.Command {
 		Before: before.IsDomainPresent(cfg),
 
 		Action: func(ctx *cli.Context) error {
-			dir, err := config.EnsureDir()
-			if err != nil {
-				return fmt.Errorf("ensure config dir: %w", err)
-			}
-
 			reader := bufio.NewReader(os.Stdin)
 
 			fmt.Print("username: ")
@@ -51,7 +46,7 @@ func Login(cfg config.Config, api *services.API) *cli.Command {
 				return fmt.Errorf("login: %w", err)
 			}
 
-			if err = config.Write(dir, config.Filename, cfg); err != nil {
+			if err = cfg.Write(); err != nil {
 				return fmt.Errorf("write config: %w", err)
 			}
 

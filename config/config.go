@@ -100,16 +100,3 @@ func EnsureDir() (string, error) {
 
 	return configRoot, nil
 }
-
-func Write(path, file string, config Config) error {
-	bts, err := yaml.Marshal(config)
-	if err != nil {
-		return fmt.Errorf("marshal: %w", err)
-	}
-
-	if err = ioutil.WriteFile(filepath.Join(path, file), bts, 0600); err != nil {
-		return fmt.Errorf("write file: %w", err)
-	}
-
-	return nil
-}
