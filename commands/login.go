@@ -48,7 +48,7 @@ func Login(cfg config.Config, api *services.API) *cli.Command {
 				return fmt.Errorf("login: %w", err)
 			}
 
-			if err = config.WriteConfig(dir, config.Filename, cfg); err != nil {
+			if err = config.Write(dir, config.Filename, cfg); err != nil {
 				return fmt.Errorf("write config: %w", err)
 			}
 

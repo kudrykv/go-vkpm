@@ -20,7 +20,7 @@ type Cookies struct {
 	SessionID string `yaml:"sessionid"`
 }
 
-func EnsureConfigDir() (string, error) {
+func EnsureDir() (string, error) {
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
 		return "", fmt.Errorf("user home dir: %w", err)
@@ -35,7 +35,7 @@ func EnsureConfigDir() (string, error) {
 	return configRoot, nil
 }
 
-func ReadConfig(path, file string) (Config, error) {
+func Read(path, file string) (Config, error) {
 	bts, err := ioutil.ReadFile(strings.Join([]string{path, file}, string(os.PathSeparator)))
 	if err != nil {
 		return Config{}, fmt.Errorf("read file: %w", err)
@@ -49,7 +49,7 @@ func ReadConfig(path, file string) (Config, error) {
 	return authConfig, nil
 }
 
-func WriteConfig(path, file string, config Config) error {
+func Write(path, file string, config Config) error {
 	bts, err := yaml.Marshal(config)
 	if err != nil {
 		return fmt.Errorf("marshal: %w", err)

@@ -17,7 +17,7 @@ import (
 func main() {
 	ctx := context.Background()
 
-	dir, err := config.EnsureConfigDir()
+	dir, err := config.EnsureDir()
 	if err != nil {
 		exit("ensure config dir", err)
 	}
@@ -35,7 +35,7 @@ func main() {
 			exit("close", err)
 		}
 	} else {
-		cfg, err = config.ReadConfig(dir, "config.yml")
+		cfg, err = config.Read(dir, "config.yml")
 		if err != nil {
 			exit("read config", err)
 		}

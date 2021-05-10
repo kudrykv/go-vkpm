@@ -21,7 +21,7 @@ func Config(cfg config.Config) *cli.Command {
 		},
 
 		Action: func(ctx *cli.Context) error {
-			dir, err := config.EnsureConfigDir()
+			dir, err := config.EnsureDir()
 			if err != nil {
 				return fmt.Errorf("ensure config dir: %w", err)
 			}
@@ -34,7 +34,7 @@ func Config(cfg config.Config) *cli.Command {
 				cfg.DefaultProject = defProj
 			}
 
-			if err := config.WriteConfig(dir, config.Filename, cfg); err != nil {
+			if err := config.Write(dir, config.Filename, cfg); err != nil {
 				return fmt.Errorf("write config: %w", err)
 			}
 
