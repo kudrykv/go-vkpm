@@ -58,20 +58,6 @@ func Config() *cli.Command {
 	}
 }
 
-func ReadConfig(path, file string) (types.Config, error) {
-	bts, err := ioutil.ReadFile(strings.Join([]string{path, file}, string(os.PathSeparator)))
-	if err != nil {
-		return types.Config{}, fmt.Errorf("read file: %w", err)
-	}
-
-	var authConfig types.Config
-	if err = yaml.Unmarshal(bts, &authConfig); err != nil {
-		return authConfig, fmt.Errorf("unmarshal: %w", err)
-	}
-
-	return authConfig, nil
-}
-
 func WriteConfig(path, file string, config types.Config) error {
 	bts, err := yaml.Marshal(config)
 	if err != nil {
