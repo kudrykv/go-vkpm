@@ -60,7 +60,7 @@ func Report(cfg types.Config, api *services.API) *cli.Command {
 				return fmt.Errorf("history: %w", err)
 			}
 
-			if entry, err = entry.Align(history); err != nil {
+			if entry, err = entry.AlignTimes(history); err != nil {
 				return fmt.Errorf("align: %w", err)
 			}
 
@@ -72,10 +72,10 @@ func Report(cfg types.Config, api *services.API) *cli.Command {
 }
 
 func parseEntry(c *cli.Context, cfg types.Config, projects types.Projects) (types.ReportEntry, error) {
-	entry := types.ReportEntry{ProjectName: c.String(flagProj)}
+	entry := types.ReportEntry{Project: types.Project{Name: c.String(flagProj)}}
 
-	if len(entry.ProjectName) == 0 {
-		if entry.ProjectName = cfg.DefaultProject; len(entry.ProjectName) == 0 {
+	if len(entry.Project.Name) == 0 {
+		if entry.Project.Name = cfg.DefaultProject; len(entry.Project.Name) == 0 {
 			return entry, fmt.Errorf("no project provided: %w", errEmptyProj)
 		}
 	}

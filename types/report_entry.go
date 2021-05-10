@@ -3,6 +3,8 @@ package types
 import (
 	"errors"
 	"fmt"
+	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -31,11 +33,28 @@ func (e ReportEntries) Reported(d Date) bool {
 	return false
 }
 
+func (e ReportEntries) FindLatestForToday(date Date) *ReportEntry {
+	sort.Slice(e, func(i, j int) bool {
+		return e[i].ReportDate.Add(e[i].EndTime.Sub(e[i].StartTime)).
+			After(e[j].ReportDate.Add(e[j].EndTime.Sub(e[j].StartTime)))
+	})
+
+	for _, entry := range e {
+		if entry.ReportDate.Equal(date) {
+			cp := entry
+
+			return &cp
+		}
+	}
+
+	return nil
+}
+
 type ReportEntry struct {
 	ID          string
 	PublishDate Date
 	ReportDate  Date
-	ProjectName string
+	Project     Project
 	Activity    string
 	Name        string
 	Description string
@@ -60,6 +79,9 @@ func (e ReportEntry) IsSpanAndRangeAbsent() bool {
 var (
 	ErrNoStartTime    = errors.New("no start time")
 	ErrNoEndTime      = errors.New("no end time")
+	ErrNoReportDate   = errors.New("no report date")
+	ErrNoAnyTime      = errors.New("no any time")
+	ErrTimeOverflow   = errors.New("overflow to the next day")
 	ErrStartLargerEnd = errors.New("start time is greater or equal than end time")
 	ErrTimeNotRounded = errors.New("time must be rounded to 10 minutes")
 	ErrStatusNegative = errors.New("status is less than zero")
@@ -131,18 +153,50 @@ func (e ReportEntry) SetActivity(short string) (ReportEntry, error) {
 }
 
 func (e ReportEntry) UpdateProjectName(available Projects) (ReportEntry, error) {
-	project, err := available.Match(e.ProjectName)
-	if err != nil {
+	var err error
+	if e.Project, err = available.Match(e.Project.Name); err != nil {
 		return e, fmt.Errorf("match: %w", err)
 	}
-
-	e.ProjectName = project.Name
 
 	return e, nil
 }
 
-func (e ReportEntry) Align(history ReportEntries) (ReportEntry, error) {
+func (e ReportEntry) AlignTimes(history ReportEntries) (ReportEntry, error) {
+	if e.ReportDate.IsZero() {
+		return e, fmt.Errorf("zero: %w", ErrNoReportDate)
+	}
+
+	if e.IsSpanAndRangeAbsent() {
+		return e, fmt.Errorf("no time: %w", ErrNoAnyTime)
+	}
+
+	if e.IsEmptyRange() {
+		e.StartTime = time.Date(0, 0, 0, 9, 0, 0, 0, time.UTC)
+		if entry := history.FindLatestForToday(e.ReportDate); entry != nil {
+			e.StartTime = entry.EndTime
+		}
+
+		e.EndTime = e.StartTime.Add(e.Span)
+
+		if e.StartTime.Day() != e.EndTime.Day() {
+			return e, fmt.Errorf("overflow: %w", ErrTimeOverflow)
+		}
+	}
+
 	return e, nil
+}
+
+func (e ReportEntry) String() string {
+	return "" +
+		"Project:     " + e.Project.Name + "\n" +
+		"Report date: " + e.ReportDate.Format("January 2, Monday") + "\n" +
+		"Activity:    " + e.Activity + "\n" +
+		"Status:      " + strconv.Itoa(e.Status) + "\n" +
+		"Time:        " + e.StartTime.Format("15:04") + "-" + e.EndTime.Format("15:04") +
+		" (" + e.Span.String() + ")" + "\n" +
+		"\n" +
+		"Name:        " + e.Name + "\n" +
+		"Desc:        " + e.Description
 }
 
 func NewReportEntriesFromHTMLNode(doc *html.Node) (ReportEntries, error) {
@@ -161,7 +215,7 @@ func NewReportEntriesFromHTMLNode(doc *html.Node) (ReportEntries, error) {
 			expr string
 		}{
 			{&entry.ID, `./td[1]`},
-			{&entry.ProjectName, `./td[4]`},
+			{&entry.Project.Name, `./td[4]`},
 			{&entry.Activity, `./td[5]//option[@selected]`},
 			{&entry.Name, `./td[6]`},
 			{&entry.Description, `./td[7]`},
