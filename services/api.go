@@ -26,6 +26,7 @@ type API struct {
 
 	blocksOn bool
 	mux      *sync.Mutex
+	sem      chan struct{}
 }
 
 var (
@@ -38,7 +39,7 @@ var (
 )
 
 func NewAPI(hc *http.Client, cfg config.Config) *API {
-	return &API{hc: hc, cfg: cfg, mux: &sync.Mutex{}}
+	return &API{hc: hc, cfg: cfg, mux: &sync.Mutex{}, sem: make(chan struct{}, 4)}
 }
 
 func (a *API) WithCookies(c config.Cookies) *API {
@@ -337,6 +338,9 @@ func (a *API) cookies(ctx context.Context) (string, error) {
 func (a *API) do(
 	ctx context.Context, method, url string, body url.Values, h http.Header,
 ) ([]byte, *http.Response, error) {
+	a.sem <- struct{}{}
+	defer func() { <-a.sem }()
+
 	var (
 		req *http.Request
 		err error
