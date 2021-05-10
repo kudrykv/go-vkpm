@@ -3,28 +3,26 @@ package main
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"strings"
 	"time"
 
 	"github.com/kudrykv/go-vkpm/commands"
+	"github.com/kudrykv/go-vkpm/config"
 	"github.com/kudrykv/go-vkpm/services"
-	"github.com/kudrykv/go-vkpm/types"
 	"github.com/urfave/cli/v2"
-	"gopkg.in/yaml.v2"
 )
 
 func main() {
 	ctx := context.Background()
 
-	dir, err := EnsureConfigDir()
+	dir, err := config.EnsureConfigDir()
 	if err != nil {
 		exit("ensure config dir", err)
 	}
 
-	var config types.Config
+	var cfg config.Config
 	join := strings.Join([]string{dir, "config.yml"}, string(os.PathSeparator))
 
 	if _, err = os.Stat(join); os.IsNotExist(err) {
@@ -37,14 +35,14 @@ func main() {
 			exit("close", err)
 		}
 	} else {
-		config, err = ReadConfig(dir, "config.yml")
+		cfg, err = config.ReadConfig(dir, "config.yml")
 		if err != nil {
 			exit("read config", err)
 		}
 	}
 
-	ctx = context.WithValue(ctx, types.Dir, dir)
-	ctx = context.WithValue(ctx, types.Cfg, config)
+	ctx = context.WithValue(ctx, config.Dir, dir)
+	ctx = context.WithValue(ctx, config.Cfg, cfg)
 
 	api := services.NewAPI(&http.Client{
 		Transport: http.DefaultTransport,
@@ -52,37 +50,22 @@ func main() {
 			return http.ErrUseLastResponse
 		},
 		Timeout: 5 * time.Second,
-	}, config).
-		WithCookies(config.Cookies)
+	}, cfg).
+		WithCookies(cfg.Cookies)
 
 	app := &cli.App{
 		Name: "vkpm",
 		Commands: []*cli.Command{
-			commands.Config(),
-			commands.Login(config, api),
+			commands.Config(cfg),
+			commands.Login(cfg, api),
 			commands.Dashboard(api),
-			commands.Report(config, api),
+			commands.Report(cfg, api),
 		},
 	}
 
 	if err = app.RunContext(ctx, os.Args); err != nil {
 		exit("", err)
 	}
-}
-
-func EnsureConfigDir() (string, error) {
-	homeDir, err := os.UserHomeDir()
-	if err != nil {
-		return "", fmt.Errorf("user home dir: %w", err)
-	}
-
-	configRoot := strings.Join([]string{homeDir, ".config", "vkpm"}, string(os.PathSeparator))
-
-	if err = os.MkdirAll(configRoot, os.ModePerm); err != nil {
-		return "", fmt.Errorf("mkdir all: %w", err)
-	}
-
-	return configRoot, nil
 }
 
 // nolint:forbidigo
@@ -107,18 +90,4 @@ func exit(msg string, err error) {
 	}
 
 	os.Exit(1)
-}
-
-func ReadConfig(path, file string) (types.Config, error) {
-	bts, err := ioutil.ReadFile(strings.Join([]string{path, file}, string(os.PathSeparator)))
-	if err != nil {
-		return types.Config{}, fmt.Errorf("read file: %w", err)
-	}
-
-	var authConfig types.Config
-	if err = yaml.Unmarshal(bts, &authConfig); err != nil {
-		return authConfig, fmt.Errorf("unmarshal: %w", err)
-	}
-
-	return authConfig, nil
 }

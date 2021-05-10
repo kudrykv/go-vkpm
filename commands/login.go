@@ -7,13 +7,13 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/kudrykv/go-vkpm/config"
 	"github.com/kudrykv/go-vkpm/services"
-	"github.com/kudrykv/go-vkpm/types"
 	"github.com/urfave/cli/v2"
 	"golang.org/x/term"
 )
 
-func Login(config types.Config, api *services.API) *cli.Command {
+func Login(cfg config.Config, api *services.API) *cli.Command {
 	// nolint: forbidigo
 	return &cli.Command{
 		Name: "login",
@@ -43,12 +43,12 @@ func Login(config types.Config, api *services.API) *cli.Command {
 				return fmt.Errorf("read password: %w", err)
 			}
 
-			config.Cookies, err = api.Login(ctx.Context, username, string(btsPassword))
+			cfg.Cookies, err = api.Login(ctx.Context, username, string(btsPassword))
 			if err != nil {
 				return fmt.Errorf("login: %w", err)
 			}
 
-			if err = WriteConfig(dir, "config.yml", config); err != nil {
+			if err = config.WriteConfig(dir, config.Filename, cfg); err != nil {
 				return fmt.Errorf("write config: %w", err)
 			}
 

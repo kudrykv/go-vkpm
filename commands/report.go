@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/kudrykv/go-vkpm/config"
 	"github.com/kudrykv/go-vkpm/services"
 	"github.com/kudrykv/go-vkpm/types"
 	"github.com/urfave/cli/v2"
@@ -31,7 +32,7 @@ var (
 	errNoTime      = errors.New("specify span or time range")
 )
 
-func Report(cfg types.Config, api *services.API) *cli.Command {
+func Report(cfg config.Config, api *services.API) *cli.Command {
 	return &cli.Command{
 		Name: "report",
 		Flags: []cli.Flag{
@@ -97,7 +98,7 @@ func getProjects(cctx context.Context, api *services.API, projects *types.Projec
 	}
 }
 
-func parseEntry(c *cli.Context, cfg types.Config) (types.ReportEntry, error) {
+func parseEntry(c *cli.Context, cfg config.Config) (types.ReportEntry, error) {
 	entry := types.ReportEntry{
 		Project:     types.Project{Name: c.String(flagProj)},
 		Name:        c.String(flagTitle),

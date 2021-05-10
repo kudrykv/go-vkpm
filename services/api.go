@@ -14,14 +14,15 @@ import (
 	"time"
 
 	"github.com/antchfx/htmlquery"
+	"github.com/kudrykv/go-vkpm/config"
 	"github.com/kudrykv/go-vkpm/types"
 	"golang.org/x/net/html"
 )
 
 type API struct {
 	hc  *http.Client
-	cfg types.Config
-	c   types.Cookies
+	cfg config.Config
+	c   config.Cookies
 
 	blocksOn bool
 	mux      *sync.Mutex
@@ -36,19 +37,19 @@ var (
 	ErrNoReport  = errors.New("no report found")
 )
 
-func NewAPI(hc *http.Client, cfg types.Config) *API {
+func NewAPI(hc *http.Client, cfg config.Config) *API {
 	return &API{hc: hc, cfg: cfg, mux: &sync.Mutex{}}
 }
 
-func (a *API) WithCookies(c types.Cookies) *API {
+func (a *API) WithCookies(c config.Cookies) *API {
 	a.c = c
 	return a
 }
 
-func (a *API) Login(ctx context.Context, username, password string) (types.Cookies, error) {
+func (a *API) Login(ctx context.Context, username, password string) (config.Cookies, error) {
 	csrf, err := a.cookies(ctx)
 	if err != nil {
-		return types.Cookies{}, fmt.Errorf("cookies: %w", err)
+		return config.Cookies{}, fmt.Errorf("cookies: %w", err)
 	}
 
 	values := url.Values{}
@@ -61,7 +62,7 @@ func (a *API) Login(ctx context.Context, username, password string) (types.Cooki
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, "https://"+a.cfg.Domain+"/login/", buff)
 	if err != nil {
-		return types.Cookies{}, fmt.Errorf("post /login/: %w", err)
+		return config.Cookies{}, fmt.Errorf("post /login/: %w", err)
 	}
 
 	req.Header.Set("Accept", "*/*")
@@ -71,18 +72,18 @@ func (a *API) Login(ctx context.Context, username, password string) (types.Cooki
 
 	resp, err := a.hc.Do(req)
 	if err != nil {
-		return types.Cookies{}, fmt.Errorf("do: %w", err)
+		return config.Cookies{}, fmt.Errorf("do: %w", err)
 	}
 
 	if _, err = ioutil.ReadAll(resp.Body); err != nil {
-		return types.Cookies{}, fmt.Errorf("read all: %w", err)
+		return config.Cookies{}, fmt.Errorf("read all: %w", err)
 	}
 
 	if err = resp.Body.Close(); err != nil {
-		return types.Cookies{}, fmt.Errorf("close: %w", err)
+		return config.Cookies{}, fmt.Errorf("close: %w", err)
 	}
 
-	cc := types.Cookies{}
+	cc := config.Cookies{}
 	for _, cookie := range resp.Cookies() {
 		if cookie.Name == "csrftoken" {
 			cc.CSRFToken = cookie.Value
