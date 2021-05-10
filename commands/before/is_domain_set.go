@@ -12,7 +12,7 @@ var (
 	ErrNoDomain = errors.New("empty domain")
 )
 
-func IsDomainPresent(cfg config.Config) func(*cli.Context) error {
+func IsDomainSet(cfg config.Config) func(*cli.Context) error {
 	return func(*cli.Context) error {
 		if len(cfg.Domain) == 0 {
 			return fmt.Errorf("domain must be present: %w", ErrNoDomain)

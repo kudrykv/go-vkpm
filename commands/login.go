@@ -19,7 +19,7 @@ func Login(cfg config.Config, api *services.API) *cli.Command {
 		Name:  "login",
 		Usage: "sign in into the system",
 
-		Before: before.IsDomainPresent(cfg),
+		Before: before.IsDomainSet(cfg),
 
 		Action: func(ctx *cli.Context) error {
 			reader := bufio.NewReader(os.Stdin)
