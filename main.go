@@ -41,9 +41,6 @@ func main() {
 		}
 	}
 
-	ctx = context.WithValue(ctx, config.Dir, dir)
-	ctx = context.WithValue(ctx, config.Cfg, cfg)
-
 	api := services.NewAPI(&http.Client{
 		Transport: http.DefaultTransport,
 		CheckRedirect: func(*http.Request, []*http.Request) error {
