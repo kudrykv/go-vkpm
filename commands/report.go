@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/kudrykv/go-vkpm/commands/before"
 	"github.com/kudrykv/go-vkpm/config"
 	"github.com/kudrykv/go-vkpm/services"
 	"github.com/kudrykv/go-vkpm/types"
@@ -34,7 +35,8 @@ var (
 
 func Report(cfg config.Config, api *services.API) *cli.Command {
 	return &cli.Command{
-		Name: "report",
+		Name:   "report",
+		Before: before.IsHTTPAuthMeet(cfg),
 		Flags: []cli.Flag{
 			&cli.TimestampFlag{Name: flagFor, Layout: "01-02", DefaultText: "not set"},
 			&cli.StringFlag{Name: flagProj},

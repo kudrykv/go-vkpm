@@ -9,7 +9,8 @@ import (
 )
 
 var (
-	ErrNoDomain = errors.New("empty domain")
+	ErrNoDomain  = errors.New("empty domain")
+	ErrNoCookies = errors.New("no cookies")
 )
 
 func IsDomainSet(cfg config.Config) func(*cli.Context) error {

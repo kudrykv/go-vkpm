@@ -4,15 +4,18 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/kudrykv/go-vkpm/commands/before"
+	"github.com/kudrykv/go-vkpm/config"
 	"github.com/kudrykv/go-vkpm/services"
 	"github.com/kudrykv/go-vkpm/types"
 	"github.com/urfave/cli/v2"
 	"golang.org/x/sync/errgroup"
 )
 
-func Dashboard(api *services.API) *cli.Command {
+func Dashboard(cfg config.Config, api *services.API) *cli.Command {
 	return &cli.Command{
-		Name: "dashboard",
+		Name:   "dashboard",
+		Before: before.IsHTTPAuthMeet(cfg),
 		Action: func(c *cli.Context) error {
 			var (
 				thisMonthSalary types.Salary

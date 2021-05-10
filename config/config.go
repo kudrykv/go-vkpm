@@ -23,6 +23,10 @@ type Cookies struct {
 	SessionID string `yaml:"sessionid"`
 }
 
+func (c Cookies) IsZero() bool {
+	return len(c.CSRFToken) == 0 || len(c.SessionID) == 0
+}
+
 func New(path, name string) (Config, error) {
 	var (
 		cfg  = Config{path: path, name: name}

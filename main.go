@@ -36,7 +36,7 @@ func main() {
 		Commands: []*cli.Command{
 			commands.Config(cfg),
 			commands.Login(cfg, api),
-			commands.Dashboard(api),
+			commands.Dashboard(cfg, api),
 			commands.Report(cfg, api),
 		},
 	}
