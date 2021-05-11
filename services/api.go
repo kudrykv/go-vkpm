@@ -150,7 +150,7 @@ func (a *API) Birthdays(ctx context.Context) (types.Persons, error) {
 func (a *API) History(ctx context.Context, year int, month time.Month) (types.ReportEntries, error) {
 	body := url.Values{"year": {strconv.Itoa(year)}, "month": {strconv.Itoa(int(month))}}
 
-	doc, err := a.doParse(ctx, http.MethodGet, "/history/", body)
+	doc, err := a.doParse(ctx, http.MethodPost, "/history/", body)
 	if err != nil {
 		return nil, fmt.Errorf("do parse: %w", err)
 	}

@@ -13,6 +13,38 @@ import (
 	"golang.org/x/net/html"
 )
 
+type Salaries []Salary
+
+func (s Salaries) Paid() float64 {
+	var paid float64
+
+	for _, salary := range s {
+		paid += salary.Paid
+	}
+
+	return paid
+}
+
+func (s Salaries) Expected() float64 {
+	var expected float64
+
+	for _, salary := range s {
+		expected += salary.ExpectedSalary
+	}
+
+	return expected
+}
+
+func (s Salaries) At(year int, month time.Month) Salary {
+	for _, salary := range s {
+		if salary.Year == year && salary.Month == int(month) {
+			return salary
+		}
+	}
+
+	return Salary{}
+}
+
 type Salary struct {
 	RatePerHour        float64
 	Rate               float64
@@ -32,7 +64,7 @@ type Salary struct {
 }
 
 func (s Salary) StringTotalPaid() string {
-	format := time.Date(s.Year, time.Month(s.Month), 0, 0, 0, 0, 0, time.UTC).Format("January, 2006")
+	format := time.Date(s.Year, time.Month(s.Month), 1, 0, 0, 0, 0, time.UTC).Format("January, 2006")
 
 	var out string
 	if s.Paid == 0 {
@@ -61,7 +93,6 @@ func f2s(f float64, precision ...int) string {
 
 var (
 	ErrNodeNotFound = errors.New("node not found")
-	ErrNumNotFound  = errors.New("number not found")
 	ErrBadTotalPaid = errors.New("bad total / paid")
 
 	numRegex = regexp.MustCompile(`\d+(?:\.\d+)?`)
@@ -139,6 +170,10 @@ func getIntFromNode(doc *html.Node, expr string) (int, error) {
 		return 0, fmt.Errorf("get text from node: %w", err)
 	}
 
+	if len(text) == 0 {
+		return 0, nil
+	}
+
 	atoi, err := strconv.Atoi(text)
 	if err != nil {
 		return 0, fmt.Errorf("atoi: %w", err)
@@ -154,7 +189,7 @@ func getTextFromNode(doc *html.Node, expr string) (string, error) {
 	}
 
 	if node == nil {
-		return "", fmt.Errorf("nil node '%s': %w", expr, ErrNodeNotFound)
+		return "", nil
 	}
 
 	if node.FirstChild == nil {
@@ -195,7 +230,7 @@ func getDateFromNode(doc *html.Node, layout, expr string) (Date, error) {
 func getNumFromString(str string) (float64, error) {
 	numStr := numRegex.FindString(str)
 	if len(numStr) == 0 {
-		return 0, fmt.Errorf("search in '%v': %w", str, ErrNumNotFound)
+		return 0, nil
 	}
 
 	num, err := strconv.ParseFloat(numStr, 10)

@@ -40,6 +40,19 @@ var (
 	}
 )
 
+type GroupedEntries []ReportEntries
+
+func (g GroupedEntries) StringYearView() string {
+	s := make([]string, 0, len(g))
+
+	for _, monthly := range g {
+		month := monthly[0].ReportDate.Format("January")
+		s = append(s, month+": "+monthly.ProjectHours().String())
+	}
+
+	return strings.Join(s, "\n")
+}
+
 type ReportEntries []ReportEntry
 
 func (e ReportEntries) String() string {
@@ -125,7 +138,7 @@ func (e ReportEntries) ProjectHours() ProjectsHours {
 	}
 
 	sort.Slice(projectsHours, func(i, j int) bool {
-		return projectsHours[i].Project.Name < projectsHours[j].Project.Name
+		return projectsHours[i].Duration < projectsHours[j].Duration
 	})
 
 	return projectsHours
