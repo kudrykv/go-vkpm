@@ -106,14 +106,14 @@ func (a *API) Login(ctx context.Context, username, password string) (config.Cook
 	return cc, nil
 }
 
-func (a *API) Salary(ctx context.Context, year, month int) (types.Salary, error) {
+func (a *API) Salary(ctx context.Context, year int, month time.Month) (types.Salary, error) {
 	var salary types.Salary
 
 	if err := a.allBlocksOn(ctx); err != nil {
 		return salary, fmt.Errorf("turn blocks on: %w", err)
 	}
 
-	body := url.Values{"year": {strconv.Itoa(year)}, "month": {strconv.Itoa(month)}}
+	body := url.Values{"year": {strconv.Itoa(year)}, "month": {strconv.Itoa(int(month))}}
 
 	doc, err := a.doParse(ctx, http.MethodPost, "/dashboard/block/user_salary_block/", body)
 	if err != nil {

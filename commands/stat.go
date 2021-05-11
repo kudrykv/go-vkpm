@@ -79,7 +79,7 @@ func getSalaryInChan(
 	cctx context.Context, api *services.API, year int, m time.Month, salariesChan chan types.Salary,
 ) func() error {
 	return func() error {
-		salary, err := api.Salary(cctx, year, int(m))
+		salary, err := api.Salary(cctx, year, m)
 		if err != nil {
 			return fmt.Errorf("salary %d %v: %w", year, m, err)
 		}

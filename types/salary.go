@@ -37,7 +37,7 @@ func (s Salaries) Expected() float64 {
 
 func (s Salaries) At(year int, month time.Month) Salary {
 	for _, salary := range s {
-		if salary.Year == year && salary.Month == int(month) {
+		if salary.Year == year && salary.Month == month {
 			return salary
 		}
 	}
@@ -58,7 +58,7 @@ type Salary struct {
 	BonusDollars       float64
 	WorkingDaysInMonth float64
 	Year               int
-	Month              int
+	Month              time.Month
 	Total              float64
 	Paid               float64
 }
@@ -98,7 +98,7 @@ var (
 	numRegex = regexp.MustCompile(`\d+(?:\.\d+)?`)
 )
 
-func NewSalaryFromHTMLNode(doc *html.Node, year int, month int) (Salary, error) {
+func NewSalaryFromHTMLNode(doc *html.Node, year int, month time.Month) (Salary, error) {
 	var (
 		salary = Salary{Year: year, Month: month}
 		err    error

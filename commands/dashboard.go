@@ -76,7 +76,7 @@ func getHistory(cctx context.Context, api *services.API, moment types.Date, entr
 func getSalary(cctx context.Context, api *services.API, moment types.Date, salary *types.Salary) func() error {
 	return func() error {
 		var err error
-		if *salary, err = api.Salary(cctx, moment.Year(), int(moment.Month())); err != nil {
+		if *salary, err = api.Salary(cctx, moment.Year(), moment.Month()); err != nil {
 			return fmt.Errorf("salary in %d %v: %w", moment.Year(), moment.Month(), err)
 		}
 
