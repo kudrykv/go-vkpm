@@ -53,6 +53,16 @@ func (g GroupedEntries) StringYearView() string {
 	return strings.Join(s, "\n")
 }
 
+func (g GroupedEntries) At(year int, month time.Month) ReportEntries {
+	for _, entries := range g {
+		if entries[0].ReportDate.Year() == year && entries[0].ReportDate.Month() == month {
+			return entries
+		}
+	}
+
+	return nil
+}
+
 type ReportEntries []ReportEntry
 
 func (e ReportEntries) String() string {
@@ -138,7 +148,7 @@ func (e ReportEntries) ProjectHours() ProjectsHours {
 	}
 
 	sort.Slice(projectsHours, func(i, j int) bool {
-		return projectsHours[i].Duration < projectsHours[j].Duration
+		return projectsHours[i].Duration > projectsHours[j].Duration
 	})
 
 	return projectsHours
@@ -167,6 +177,16 @@ func (e ReportEntries) GroupByWeeks() []ReportEntries {
 	}
 
 	return groups
+}
+
+func (e ReportEntries) Duration() time.Duration {
+	var duration time.Duration
+
+	for _, entry := range e {
+		duration += entry.Span
+	}
+
+	return duration
 }
 
 type ReportEntry struct {
@@ -505,6 +525,10 @@ func NewReportEntriesFromHTMLNode(doc *html.Node) (ReportEntries, error) {
 		text, err := getTextFromNode(node, `./td[11]`)
 		if err != nil {
 			return nil, fmt.Errorf("get text from node: %w", err)
+		}
+
+		if strings.Contains(text, ":") {
+			text = strings.ReplaceAll(strings.ReplaceAll(text, "h", "m"), ":", "h")
 		}
 
 		if entry.Span, err = time.ParseDuration(text); err != nil {

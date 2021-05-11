@@ -66,6 +66,10 @@ type Salary struct {
 func (s Salary) StringTotalPaid() string {
 	format := time.Date(s.Year, time.Month(s.Month), 1, 0, 0, 0, 0, time.UTC).Format("January, 2006")
 
+	return gchalk.White(format) + ": " + s.StringTotalPaidShort()
+}
+
+func (s Salary) StringTotalPaidShort() string {
 	var out string
 	if s.Paid == 0 {
 		expected := gchalk.Green("$" + strconv.FormatFloat(s.ExpectedSalary, 'f', 2, 64))
@@ -75,7 +79,7 @@ func (s Salary) StringTotalPaid() string {
 		out = "got " + paid
 	}
 
-	return gchalk.White(format) + ": " + out
+	return out
 }
 
 func (s Salary) StringHoursReport() string {

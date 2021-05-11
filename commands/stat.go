@@ -55,7 +55,11 @@ func Stat(cfg config.Config, api *services.API) *cli.Command {
 
 			_, _ = fmt.Fprintln(c.App.Writer, salaries)
 			_, _ = fmt.Fprintln(c.App.Writer)
-			_, _ = fmt.Fprintln(c.App.Writer, types.StatSalaryHistory{Year: year, Salaries: salaries, Histories: histories})
+			_, _ = fmt.Fprintln(c.App.Writer, types.StatSalaryHistory{
+				Year: year, Salaries: salaries, Histories: histories,
+				StartMonth: time.January,
+				EndMonth:   month,
+			})
 
 			return nil
 		},
