@@ -42,6 +42,25 @@ var (
 
 type ReportEntries []ReportEntry
 
+func (e ReportEntries) String() string {
+	projHours := e.ProjectHours()
+
+	groups := e.GroupByWeeks()
+	groupStrs := make([]string, 0, len(groups))
+
+	for i := len(groups) - 1; i >= 0; i-- {
+		s := groups[i][0].ReportDate.Format("Monday, 2:\n")
+
+		for _, entry := range groups[i] {
+			s += "  " + entry.StringShort() + "\n"
+		}
+
+		groupStrs = append(groupStrs, s)
+	}
+
+	return projHours.String() + "\n\n" + strings.Join(groupStrs, "\n")
+}
+
 func (e ReportEntries) Reported(d Date) bool {
 	for _, ee := range e {
 		if ee.ReportDate.Year() == d.Year() && ee.ReportDate.Month() == d.Month() && ee.ReportDate.Day() == d.Day() {
@@ -83,6 +102,58 @@ func (e ReportEntries) Overlaps(entry ReportEntry) ReportEntries {
 	}
 
 	return list
+}
+
+func (e ReportEntries) ProjectHours() ProjectsHours {
+	m := map[Project]ProjectHours{}
+	var ph ProjectHours
+	var ok bool
+
+	for _, entry := range e {
+		if ph, ok = m[entry.Project]; ok {
+			ph.Duration += entry.Span
+			m[entry.Project] = ph
+		} else {
+			m[entry.Project] = ProjectHours{Project: entry.Project, Duration: entry.Span}
+		}
+	}
+
+	projectsHours := make(ProjectsHours, 0, len(m))
+
+	for _, ph = range m {
+		projectsHours = append(projectsHours, ph)
+	}
+
+	sort.Slice(projectsHours, func(i, j int) bool {
+		return projectsHours[i].Project.Name < projectsHours[j].Project.Name
+	})
+
+	return projectsHours
+}
+
+func (e ReportEntries) GroupByWeeks() []ReportEntries {
+	var groups []ReportEntries
+
+	//goland:noinspection GoNilness
+	for _, entry := range e {
+		idx := len(groups) - 1
+		if idx < 0 {
+			groups = append(groups, ReportEntries{entry})
+
+			continue
+		}
+
+		lastGroup := groups[idx]
+		lastEntry := lastGroup[len(lastGroup)-1]
+
+		if lastEntry.ReportDate.Equal(entry.ReportDate) {
+			groups[idx] = append(groups[idx], entry)
+		} else {
+			groups = append(groups, ReportEntries{entry})
+		}
+	}
+
+	return groups
 }
 
 type ReportEntry struct {
@@ -349,6 +420,10 @@ func (e ReportEntry) IsSame(o ReportEntry) bool {
 		e.Status == o.Status &&
 		e.StartTime.Hour() == o.StartTime.Hour() && e.StartTime.Minute() == o.StartTime.Minute() &&
 		e.EndTime.Hour() == o.EndTime.Hour() && e.EndTime.Minute() == o.EndTime.Minute()
+}
+
+func (e ReportEntry) StringShort() string {
+	return "#" + e.ID + " " + e.Span.String() + " " + e.Name
 }
 
 func NewReportEntriesFromHTMLNode(doc *html.Node) (ReportEntries, error) {

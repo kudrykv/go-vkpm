@@ -38,6 +38,7 @@ func main() {
 			commands.Login(cfg, api),
 			commands.Dashboard(cfg, api),
 			commands.Report(cfg, api),
+			commands.History(cfg, api),
 		},
 	}
 
