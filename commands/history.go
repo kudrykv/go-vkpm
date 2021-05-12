@@ -2,6 +2,7 @@ package commands
 
 import (
 	"fmt"
+	"runtime/trace"
 
 	"github.com/kudrykv/go-vkpm/commands/before"
 	"github.com/kudrykv/go-vkpm/config"
@@ -16,8 +17,11 @@ func History(p printer.Printer, cfg config.Config, api *services.API) *cli.Comma
 		Name:   "history",
 		Before: before.IsHTTPAuthMeet(cfg),
 		Action: func(c *cli.Context) error {
+			ctx, task := trace.NewTask(c.Context, "history")
+			defer task.End()
+
 			today := types.Today()
-			history, err := api.History(c.Context, today.Year(), today.Month())
+			history, err := api.History(ctx, today.Year(), today.Month())
 			if err != nil {
 				return fmt.Errorf("history: %w", err)
 			}

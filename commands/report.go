@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"runtime/trace"
 	"time"
 
 	"github.com/kudrykv/go-vkpm/commands/before"
@@ -50,6 +51,9 @@ func Report(p printer.Printer, cfg config.Config, api *services.API) *cli.Comman
 			&cli.StringFlag{Name: flagMessage, Aliases: []string{"m"}, Required: true},
 		},
 		Action: func(c *cli.Context) error {
+			ctx, task := trace.NewTask(c.Context, "report")
+			defer task.End()
+
 			var (
 				history  types.ReportEntries
 				projects types.Projects
@@ -62,7 +66,7 @@ func Report(p printer.Printer, cfg config.Config, api *services.API) *cli.Comman
 			}
 
 			today := types.Today()
-			group, cctx := errgroup.WithContext(c.Context)
+			group, cctx := errgroup.WithContext(ctx)
 
 			group.Go(getHistory(cctx, api, today, &history))
 			group.Go(getProjects(cctx, api, &projects))

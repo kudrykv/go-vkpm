@@ -3,6 +3,7 @@ package commands
 import (
 	"context"
 	"fmt"
+	"runtime/trace"
 	"sort"
 	"time"
 
@@ -27,6 +28,9 @@ func Stat(p printer.Printer, cfg config.Config, api *services.API) *cli.Command 
 		},
 		Before: before.IsHTTPAuthMeet(cfg),
 		Action: func(c *cli.Context) error {
+			ctx, task := trace.NewTask(c.Context, "stat")
+			defer task.End()
+
 			startMonth := time.January
 			endMonth := time.December
 			year := c.Int(flagYear)
@@ -40,7 +44,7 @@ func Stat(p printer.Printer, cfg config.Config, api *services.API) *cli.Command 
 				endMonth = now.Month()
 			}
 
-			group, cctx := errgroup.WithContext(c.Context)
+			group, cctx := errgroup.WithContext(ctx)
 			salariesChan := make(chan types.Salary, 2*int(endMonth))
 			historiesChan := make(chan types.ReportEntries, int(endMonth))
 

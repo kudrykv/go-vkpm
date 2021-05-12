@@ -3,6 +3,7 @@ package commands
 import (
 	"fmt"
 	"regexp"
+	"runtime/trace"
 
 	"github.com/kudrykv/go-vkpm/config"
 	"github.com/urfave/cli/v2"
@@ -26,8 +27,11 @@ func Config(cfg config.Config) *cli.Command {
 			&cli.StringFlag{Name: flagDefProj, Usage: "report default project"},
 		},
 
-		Action: func(ctx *cli.Context) error {
-			if domain := ctx.String(flagDomain); len(domain) > 0 {
+		Action: func(c *cli.Context) error {
+			_, task := trace.NewTask(c.Context, "config")
+			defer task.End()
+
+			if domain := c.String(flagDomain); len(domain) > 0 {
 				if httpsRegexp.MatchString(domain) {
 					domain = httpsRegexp.ReplaceAllString(domain, "")
 				}
@@ -35,7 +39,7 @@ func Config(cfg config.Config) *cli.Command {
 				cfg.Domain = domain
 			}
 
-			if defProj := ctx.String(flagDefProj); len(defProj) > 0 {
+			if defProj := c.String(flagDefProj); len(defProj) > 0 {
 				cfg.DefaultProject = defProj
 			}
 

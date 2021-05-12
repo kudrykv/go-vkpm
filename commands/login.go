@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"runtime/trace"
 	"syscall"
 
 	"github.com/kudrykv/go-vkpm/commands/before"
@@ -21,7 +22,10 @@ func Login(p printer.Printer, cfg config.Config, api *services.API) *cli.Command
 
 		Before: before.IsDomainSet(cfg),
 
-		Action: func(ctx *cli.Context) error {
+		Action: func(c *cli.Context) error {
+			ctx, task := trace.NewTask(c.Context, "login")
+			defer task.End()
+
 			reader := bufio.NewReader(os.Stdin)
 
 			p.Print("username: ")
@@ -41,7 +45,7 @@ func Login(p printer.Printer, cfg config.Config, api *services.API) *cli.Command
 				return fmt.Errorf("read password: %w", err)
 			}
 
-			cfg.Cookies, err = api.Login(ctx.Context, username, string(btsPassword))
+			cfg.Cookies, err = api.Login(ctx, username, string(btsPassword))
 			if err != nil {
 				return fmt.Errorf("login: %w", err)
 			}
