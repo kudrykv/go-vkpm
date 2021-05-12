@@ -9,6 +9,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"runtime/trace"
 	"strconv"
 	"sync"
 	"time"
@@ -48,6 +49,9 @@ func (a *API) WithCookies(c config.Cookies) *API {
 }
 
 func (a *API) Login(ctx context.Context, username, password string) (config.Cookies, error) {
+	ctx, task := trace.NewTask(ctx, "login")
+	defer task.End()
+
 	csrf, err := a.cookies(ctx)
 	if err != nil {
 		return config.Cookies{}, fmt.Errorf("cookies: %w", err)
@@ -107,6 +111,9 @@ func (a *API) Login(ctx context.Context, username, password string) (config.Cook
 }
 
 func (a *API) Salary(ctx context.Context, year int, month time.Month) (types.Salary, error) {
+	ctx, task := trace.NewTask(ctx, "salary")
+	defer task.End()
+
 	var salary types.Salary
 
 	if err := a.allBlocksOn(ctx); err != nil {
@@ -128,6 +135,9 @@ func (a *API) Salary(ctx context.Context, year int, month time.Month) (types.Sal
 }
 
 func (a *API) Birthdays(ctx context.Context) (types.Persons, error) {
+	ctx, task := trace.NewTask(ctx, "birthdays")
+	defer task.End()
+
 	if err := a.allBlocksOn(ctx); err != nil {
 		return nil, fmt.Errorf("turn blocks on: %w", err)
 	}
@@ -148,6 +158,9 @@ func (a *API) Birthdays(ctx context.Context) (types.Persons, error) {
 }
 
 func (a *API) History(ctx context.Context, year int, month time.Month) (types.ReportEntries, error) {
+	ctx, task := trace.NewTask(ctx, "history")
+	defer task.End()
+
 	body := url.Values{"year": {strconv.Itoa(year)}, "month": {strconv.Itoa(int(month))}}
 
 	doc, err := a.doParse(ctx, http.MethodPost, "/history/", body)
@@ -164,6 +177,9 @@ func (a *API) History(ctx context.Context, year int, month time.Month) (types.Re
 }
 
 func (a *API) VacationsHolidays(ctx context.Context, year int) (types.Vacations, types.Holidays, error) {
+	ctx, task := trace.NewTask(ctx, "vacations holidays")
+	defer task.End()
+
 	body := url.Values{"year": {strconv.Itoa(year)}, "year_changed": {"true"}}
 
 	doc, err := a.doParse(ctx, http.MethodPost, "/vacations/", body)
@@ -185,6 +201,9 @@ func (a *API) VacationsHolidays(ctx context.Context, year int) (types.Vacations,
 }
 
 func (a *API) Projects(ctx context.Context) (types.Projects, error) {
+	ctx, task := trace.NewTask(ctx, "projects")
+	defer task.End()
+
 	doc, err := a.doParse(ctx, http.MethodGet, "/report/", nil)
 	if err != nil {
 		return nil, fmt.Errorf("do parse: %w", err)
@@ -199,6 +218,9 @@ func (a *API) Projects(ctx context.Context) (types.Projects, error) {
 }
 
 func (a *API) Report(ctx context.Context, entry types.ReportEntry) (types.ReportEntry, error) {
+	ctx, task := trace.NewTask(ctx, "report")
+	defer task.End()
+
 	body, err := entry.URLValues()
 	if err != nil {
 		return entry, fmt.Errorf("url values: %w", err)
@@ -231,6 +253,8 @@ func (a *API) Report(ctx context.Context, entry types.ReportEntry) (types.Report
 }
 
 func (a *API) doParse(ctx context.Context, method, url string, body url.Values) (*html.Node, error) {
+	defer trace.StartRegion(ctx, "do and parse").End()
+
 	bts, resp, err := a.do(ctx, method, "https://"+a.cfg.Domain+url, body, a.h())
 	if err != nil {
 		return nil, fmt.Errorf("do: %w", err)
@@ -240,7 +264,10 @@ func (a *API) doParse(ctx context.Context, method, url string, body url.Values) 
 		return nil, fmt.Errorf(resp.Status+": %w", ErrBadStatus)
 	}
 
+	region := trace.StartRegion(ctx, "parse html")
 	doc, err := htmlquery.Parse(bytes.NewReader(bts))
+	region.End()
+
 	if err != nil {
 		return nil, fmt.Errorf("parse: %w", err)
 	}
@@ -249,9 +276,12 @@ func (a *API) doParse(ctx context.Context, method, url string, body url.Values) 
 }
 
 func (a *API) allBlocksOn(ctx context.Context) error {
+	defer trace.StartRegion(ctx, "enable all blocks").End()
+
 	a.mux.Lock()
 	defer a.mux.Unlock()
 
+	trace.Logf(ctx, "vars", "blocksOn=%v", a.blocksOn)
 	if a.blocksOn {
 		return nil
 	}
@@ -319,6 +349,8 @@ func (a *API) h() http.Header {
 }
 
 func (a *API) cookies(ctx context.Context) (string, error) {
+	defer trace.StartRegion(ctx, "cookies").End()
+
 	// resp body is already closed
 	// nolint: bodyclose
 	_, resp, err := a.do(ctx, http.MethodGet, "https://"+a.cfg.Domain+"/login/", nil, nil)
@@ -338,6 +370,8 @@ func (a *API) cookies(ctx context.Context) (string, error) {
 func (a *API) do(
 	ctx context.Context, method, url string, body url.Values, h http.Header,
 ) ([]byte, *http.Response, error) {
+	defer trace.StartRegion(ctx, "http request").End()
+
 	a.sem <- struct{}{}
 	defer func() { <-a.sem }()
 

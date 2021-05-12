@@ -28,20 +28,29 @@ func main() {
 
 	defer func() { shouldExit("stop trace", stop()) }()
 
-	ctx := context.Background()
-	p := printer.Printer{W: os.Stdout, E: os.Stderr}
+	var (
+		ctx        = context.Background()
+		p          = printer.Printer{W: os.Stdout, E: os.Stderr}
+		httpClient = &http.Client{
+			Transport: http.DefaultTransport,
+			CheckRedirect: func(*http.Request, []*http.Request) error {
+				return http.ErrUseLastResponse
+			},
+			Timeout: 30 * time.Second,
+		}
 
-	cfg, err := config.New("", "")
+		cfg config.Config
+	)
+
+	ctx, task := trace.NewTask(ctx, "app")
+	defer task.End()
+
+	region := trace.StartRegion(ctx, "initialize config")
+	cfg, err = config.New("", "")
+	region.End()
+
 	if shouldExit("new config: %w", err) {
 		return
-	}
-
-	httpClient := &http.Client{
-		Transport: http.DefaultTransport,
-		CheckRedirect: func(*http.Request, []*http.Request) error {
-			return http.ErrUseLastResponse
-		},
-		Timeout: 30 * time.Second,
 	}
 
 	api := services.NewAPI(httpClient, cfg).WithCookies(cfg.Cookies)

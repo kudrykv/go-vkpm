@@ -3,6 +3,7 @@ package commands
 import (
 	"context"
 	"fmt"
+	"runtime/trace"
 
 	"github.com/kudrykv/go-vkpm/commands/before"
 	"github.com/kudrykv/go-vkpm/config"
@@ -18,6 +19,9 @@ func Dashboard(p printer.Printer, cfg config.Config, api *services.API) *cli.Com
 		Name:   "dashboard",
 		Before: before.IsHTTPAuthMeet(cfg),
 		Action: func(c *cli.Context) error {
+			ctx, task := trace.NewTask(c.Context, "dashboard")
+			defer task.End()
+
 			var (
 				thisMonthSalary types.Salary
 				lastMonthSalary types.Salary
@@ -29,7 +33,7 @@ func Dashboard(p printer.Printer, cfg config.Config, api *services.API) *cli.Com
 				lastMonth = thisMonth.AddDate(0, -1, 0)
 			)
 
-			group, cctx := errgroup.WithContext(c.Context)
+			group, cctx := errgroup.WithContext(ctx)
 
 			group.Go(getSalary(cctx, api, thisMonth, &thisMonthSalary))
 			group.Go(getSalary(cctx, api, lastMonth, &lastMonthSalary))
@@ -54,6 +58,8 @@ func getVacationsHolidays(
 	cctx context.Context, api *services.API, moment types.Date, vacations *types.Vacations, holidays *types.Holidays,
 ) func() error {
 	return func() error {
+		defer trace.StartRegion(cctx, "get vacation holidays").End()
+
 		var err error
 		if *vacations, *holidays, err = api.VacationsHolidays(cctx, moment.Year()); err != nil {
 			return fmt.Errorf("vacations: %w", err)
@@ -65,6 +71,8 @@ func getVacationsHolidays(
 
 func getHistory(cctx context.Context, api *services.API, moment types.Date, entries *types.ReportEntries) func() error {
 	return func() error {
+		defer trace.StartRegion(cctx, "get history").End()
+
 		var err error
 		if *entries, err = api.History(cctx, moment.Year(), moment.Month()); err != nil {
 			return fmt.Errorf("history in %d %v: %w", moment.Year(), moment.Month(), err)
@@ -76,6 +84,8 @@ func getHistory(cctx context.Context, api *services.API, moment types.Date, entr
 
 func getSalary(cctx context.Context, api *services.API, moment types.Date, salary *types.Salary) func() error {
 	return func() error {
+		defer trace.StartRegion(cctx, "get salary").End()
+
 		var err error
 		if *salary, err = api.Salary(cctx, moment.Year(), moment.Month()); err != nil {
 			return fmt.Errorf("salary in %d %v: %w", moment.Year(), moment.Month(), err)
