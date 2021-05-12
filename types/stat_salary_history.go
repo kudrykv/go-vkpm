@@ -30,8 +30,12 @@ func (s StatSalaryHistory) String() string {
 	b.WriteString(strings.Join(money, ", ") + "\n\n")
 
 	for i := s.StartMonth; i <= s.EndMonth; i++ {
-		salary := s.Salaries.At(s.Year, i)
 		history := s.Histories.At(s.Year, i)
+		if len(history) == 0 {
+			continue
+		}
+
+		salary := s.Salaries.At(s.Year, i)
 
 		b.WriteString(gchalk.White(salary.Month.String()) + ": " + salary.StringTotalPaidShort())
 		b.WriteString(", spent " + history.Duration().String() + " in " + history.ProjectHours().String())

@@ -54,7 +54,12 @@ func (g GroupedEntries) StringYearView() string {
 }
 
 func (g GroupedEntries) At(year int, month time.Month) ReportEntries {
+
 	for _, entries := range g {
+		if len(entries) == 0 {
+			continue
+		}
+
 		if entries[0].ReportDate.Year() == year && entries[0].ReportDate.Month() == month {
 			return entries
 		}

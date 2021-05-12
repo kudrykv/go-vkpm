@@ -27,7 +27,7 @@ func main() {
 		CheckRedirect: func(*http.Request, []*http.Request) error {
 			return http.ErrUseLastResponse
 		},
-		Timeout: 5 * time.Second,
+		Timeout: 30 * time.Second,
 	}, cfg).
 		WithCookies(cfg.Cookies)
 

@@ -22,23 +22,28 @@ func Stat(cfg config.Config, api *services.API) *cli.Command {
 	return &cli.Command{
 		Name: "stat",
 		Flags: []cli.Flag{
-			&cli.IntFlag{Name: flagYear},
+			&cli.IntFlag{Name: flagYear, Required: true},
 		},
 		Before: before.IsHTTPAuthMeet(cfg),
 		Action: func(c *cli.Context) error {
-			now := time.Now()
+			startMonth := time.January
+			endMonth := time.December
 			year := c.Int(flagYear)
-			month := time.December
+			now := time.Now()
+
+			if now.Year() < year {
+				return fmt.Errorf("future is unknown")
+			}
 
 			if now.Year() == year {
-				month = now.Month()
+				endMonth = now.Month()
 			}
 
 			group, cctx := errgroup.WithContext(c.Context)
-			salariesChan := make(chan types.Salary, 2*int(month))
-			historiesChan := make(chan types.ReportEntries, int(month))
+			salariesChan := make(chan types.Salary, 2*int(endMonth))
+			historiesChan := make(chan types.ReportEntries, int(endMonth))
 
-			for i := time.January; i <= month; i++ {
+			for i := startMonth; i <= endMonth; i++ {
 				group.Go(getSalaryInChan(cctx, api, year, i, salariesChan))
 				group.Go(getHistoryInChan(cctx, api, year, i, historiesChan))
 			}
@@ -57,8 +62,8 @@ func Stat(cfg config.Config, api *services.API) *cli.Command {
 			_, _ = fmt.Fprintln(c.App.Writer)
 			_, _ = fmt.Fprintln(c.App.Writer, types.StatSalaryHistory{
 				Year: year, Salaries: salaries, Histories: histories,
-				StartMonth: time.January,
-				EndMonth:   month,
+				StartMonth: startMonth,
+				EndMonth:   endMonth,
 			})
 
 			return nil
@@ -102,6 +107,14 @@ func historiesChanToSlice(hc chan types.ReportEntries) types.GroupedEntries {
 	}
 
 	sort.Slice(out, func(i, j int) bool {
+		if len(out[i]) == 0 {
+			return true
+		}
+
+		if len(out[j]) == 0 {
+			return false
+		}
+
 		return out[i][0].ReportDate.Month() < out[j][0].ReportDate.Month()
 	})
 
