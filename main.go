@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"runtime/trace"
 	"strings"
 	"time"
 
@@ -19,6 +20,13 @@ var code int
 
 func main() {
 	defer func() { os.Exit(code) }()
+
+	err, stop := enabledTrace()
+	if shouldExit("enabled trace", err) {
+		return
+	}
+
+	defer func() { shouldExit("stop trace", stop()) }()
 
 	ctx := context.Background()
 	p := printer.Printer{W: os.Stdout, E: os.Stderr}
@@ -51,6 +59,37 @@ func main() {
 	}
 
 	shouldExit("", app.RunContext(ctx, os.Args))
+}
+
+func enabledTrace() (error, func() error) {
+	noop := func() error { return nil }
+
+	if os.Getenv("VKPM_ENABLE_TRACE") != "1" {
+		return nil, noop
+	}
+
+	sock, err := os.Create("trace.out")
+	if err != nil {
+		return fmt.Errorf("create trace file: %w", err), noop
+	}
+
+	if err := trace.Start(sock); err != nil {
+		if err2 := sock.Close(); err2 != nil {
+			return fmt.Errorf("trace start, close trace file: %v, %v", err, err2), noop
+		}
+
+		return fmt.Errorf("start trace: %w", err), noop
+	}
+
+	return nil, func() error {
+		trace.Stop()
+
+		if err := sock.Close(); err != nil {
+			return fmt.Errorf("close trace file: %w", err)
+		}
+
+		return nil
+	}
 }
 
 // nolint:forbidigo

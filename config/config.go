@@ -90,6 +90,10 @@ func (c Config) Write() error {
 	return nil
 }
 
+func (c Config) Path() string {
+	return c.path
+}
+
 func EnsureDir() (string, error) {
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
