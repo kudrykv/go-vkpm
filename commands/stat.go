@@ -8,6 +8,7 @@ import (
 
 	"github.com/kudrykv/go-vkpm/commands/before"
 	"github.com/kudrykv/go-vkpm/config"
+	"github.com/kudrykv/go-vkpm/printer"
 	"github.com/kudrykv/go-vkpm/services"
 	"github.com/kudrykv/go-vkpm/types"
 	"github.com/urfave/cli/v2"
@@ -18,7 +19,7 @@ const (
 	flagYear = "year"
 )
 
-func Stat(cfg config.Config, api *services.API) *cli.Command {
+func Stat(p printer.Printer, cfg config.Config, api *services.API) *cli.Command {
 	return &cli.Command{
 		Name: "stat",
 		Flags: []cli.Flag{
@@ -58,9 +59,9 @@ func Stat(cfg config.Config, api *services.API) *cli.Command {
 			salaries := salariesChanToSlice(salariesChan)
 			histories := historiesChanToSlice(historiesChan)
 
-			_, _ = fmt.Fprintln(c.App.Writer, salaries)
-			_, _ = fmt.Fprintln(c.App.Writer)
-			_, _ = fmt.Fprintln(c.App.Writer, types.StatSalaryHistory{
+			p.Println(salaries)
+			p.Println()
+			p.Println(types.StatSalaryHistory{
 				Year: year, Salaries: salaries, Histories: histories,
 				StartMonth: startMonth,
 				EndMonth:   endMonth,

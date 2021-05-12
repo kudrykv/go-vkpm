@@ -8,6 +8,7 @@ import (
 
 	"github.com/kudrykv/go-vkpm/commands/before"
 	"github.com/kudrykv/go-vkpm/config"
+	"github.com/kudrykv/go-vkpm/printer"
 	"github.com/kudrykv/go-vkpm/services"
 	"github.com/kudrykv/go-vkpm/types"
 	"github.com/urfave/cli/v2"
@@ -33,7 +34,7 @@ var (
 	errNoTime      = errors.New("specify span or time range")
 )
 
-func Report(cfg config.Config, api *services.API) *cli.Command {
+func Report(p printer.Printer, cfg config.Config, api *services.API) *cli.Command {
 	return &cli.Command{
 		Name:   "report",
 		Before: before.IsHTTPAuthMeet(cfg),
@@ -82,7 +83,7 @@ func Report(cfg config.Config, api *services.API) *cli.Command {
 				return fmt.Errorf("report: %w", err)
 			}
 
-			_, _ = fmt.Fprintln(c.App.Writer, entry)
+			p.Println(entry)
 
 			return nil
 		},

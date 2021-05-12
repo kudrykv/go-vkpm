@@ -6,13 +6,14 @@ import (
 
 	"github.com/kudrykv/go-vkpm/commands/before"
 	"github.com/kudrykv/go-vkpm/config"
+	"github.com/kudrykv/go-vkpm/printer"
 	"github.com/kudrykv/go-vkpm/services"
 	"github.com/kudrykv/go-vkpm/types"
 	"github.com/urfave/cli/v2"
 	"golang.org/x/sync/errgroup"
 )
 
-func Dashboard(cfg config.Config, api *services.API) *cli.Command {
+func Dashboard(p printer.Printer, cfg config.Config, api *services.API) *cli.Command {
 	return &cli.Command{
 		Name:   "dashboard",
 		Before: before.IsHTTPAuthMeet(cfg),
@@ -39,10 +40,10 @@ func Dashboard(cfg config.Config, api *services.API) *cli.Command {
 				return fmt.Errorf("group: %w", err)
 			}
 
-			_, _ = fmt.Fprintln(c.App.Writer, thisMonthSalary.StringTotalPaid())
-			_, _ = fmt.Fprintln(c.App.Writer, lastMonthSalary.StringTotalPaid())
-			_, _ = fmt.Fprintln(c.App.Writer)
-			_, _ = fmt.Fprintln(c.App.Writer, types.NewMonthInfo(thisMonth, thisMonthSalary, vacations, holidays, history))
+			p.Println(thisMonthSalary.StringTotalPaid())
+			p.Println(lastMonthSalary.StringTotalPaid())
+			p.Println()
+			p.Println(types.NewMonthInfo(thisMonth, thisMonthSalary, vacations, holidays, history))
 
 			return nil
 		},

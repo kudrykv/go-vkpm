@@ -43,10 +43,10 @@ func main() {
 		Commands: []*cli.Command{
 			commands.Config(cfg),
 			commands.Login(p, cfg, api),
-			commands.Dashboard(cfg, api),
-			commands.Report(cfg, api),
-			commands.History(cfg, api),
-			commands.Stat(cfg, api),
+			commands.Dashboard(p, cfg, api),
+			commands.Report(p, cfg, api),
+			commands.History(p, cfg, api),
+			commands.Stat(p, cfg, api),
 		},
 	}
 
