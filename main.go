@@ -10,32 +10,39 @@ import (
 
 	"github.com/kudrykv/go-vkpm/commands"
 	"github.com/kudrykv/go-vkpm/config"
+	"github.com/kudrykv/go-vkpm/printer"
 	"github.com/kudrykv/go-vkpm/services"
 	"github.com/urfave/cli/v2"
 )
 
+var code int
+
 func main() {
+	defer func() { os.Exit(code) }()
+
 	ctx := context.Background()
+	p := printer.Printer{W: os.Stdout, E: os.Stderr}
 
 	cfg, err := config.New("", "")
-	if err != nil {
-		exit("new config: %w", err)
+	if shouldExit("new config: %w", err) {
+		return
 	}
 
-	api := services.NewAPI(&http.Client{
+	httpClient := &http.Client{
 		Transport: http.DefaultTransport,
 		CheckRedirect: func(*http.Request, []*http.Request) error {
 			return http.ErrUseLastResponse
 		},
 		Timeout: 30 * time.Second,
-	}, cfg).
-		WithCookies(cfg.Cookies)
+	}
+
+	api := services.NewAPI(httpClient, cfg).WithCookies(cfg.Cookies)
 
 	app := &cli.App{
 		Name: "vkpm",
 		Commands: []*cli.Command{
 			commands.Config(cfg),
-			commands.Login(cfg, api),
+			commands.Login(p, cfg, api),
 			commands.Dashboard(cfg, api),
 			commands.Report(cfg, api),
 			commands.History(cfg, api),
@@ -43,13 +50,17 @@ func main() {
 		},
 	}
 
-	if err = app.RunContext(ctx, os.Args); err != nil {
-		exit("", err)
-	}
+	shouldExit("", app.RunContext(ctx, os.Args))
 }
 
 // nolint:forbidigo
-func exit(msg string, err error) {
+func shouldExit(msg string, err error) bool {
+	if err == nil {
+		return false
+	}
+
+	code = 1
+
 	if len(msg) > 0 {
 		err = fmt.Errorf("%s: %w", msg, err)
 	}
@@ -69,5 +80,5 @@ func exit(msg string, err error) {
 		indent += 2
 	}
 
-	os.Exit(1)
+	return true
 }
