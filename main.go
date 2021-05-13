@@ -77,7 +77,7 @@ func enabledTrace() (error, func() error) {
 		return nil, noop
 	}
 
-	sock, err := os.Create("trace.out")
+	sock, err := os.Create(time.Now().Format("trace-20060102150405.out"))
 	if err != nil {
 		return fmt.Errorf("create trace file: %w", err), noop
 	}
