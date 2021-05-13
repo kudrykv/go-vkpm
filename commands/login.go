@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"runtime/trace"
-	"syscall"
 
 	"github.com/kudrykv/vkpm/commands/before"
 	"github.com/kudrykv/vkpm/config"
@@ -37,7 +36,7 @@ func Login(p printer.Printer, cfg config.Config, api *services.API) *cli.Command
 
 			p.Print("password: ")
 
-			btsPassword, err := term.ReadPassword(syscall.Stdin)
+			btsPassword, err := term.ReadPassword(0) // 0 is stdin
 
 			p.Println()
 
