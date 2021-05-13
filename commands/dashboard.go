@@ -59,8 +59,6 @@ func getVacationsHolidays(
 	cctx context.Context, api *services.API, moment types.Date, vacations *types.Vacations, holidays *types.Holidays,
 ) func() error {
 	return func() error {
-		defer trace.StartRegion(cctx, "get vacation holidays").End()
-
 		var err error
 		if *vacations, *holidays, err = api.VacationsHolidays(cctx, moment.Year()); err != nil {
 			return fmt.Errorf("vacations: %w", err)
@@ -72,8 +70,6 @@ func getVacationsHolidays(
 
 func getHistory(cctx context.Context, api *services.API, moment types.Date, entries *types.ReportEntries) func() error {
 	return func() error {
-		defer trace.StartRegion(cctx, "get history").End()
-
 		var err error
 		if *entries, err = api.History(cctx, moment.Year(), moment.Month()); err != nil {
 			return fmt.Errorf("history in %d %v: %w", moment.Year(), moment.Month(), err)
@@ -85,8 +81,6 @@ func getHistory(cctx context.Context, api *services.API, moment types.Date, entr
 
 func getSalary(cctx context.Context, api *services.API, moment types.Date, salary *types.Salary) func() error {
 	return func() error {
-		defer trace.StartRegion(cctx, "get salary").End()
-
 		var err error
 		if *salary, err = api.Salary(cctx, moment.Year(), moment.Month()); err != nil {
 			return fmt.Errorf("salary in %d %v: %w", moment.Year(), moment.Month(), err)

@@ -1,9 +1,11 @@
 package types
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"regexp"
+	"runtime/trace"
 	"strconv"
 	"strings"
 	"time"
@@ -102,7 +104,10 @@ var (
 	numRegex = regexp.MustCompile(`\d+(?:\.\d+)?`)
 )
 
-func NewSalaryFromHTMLNode(doc *html.Node, year int, month time.Month) (Salary, error) {
+func NewSalaryFromHTMLNode(ctx context.Context, doc *html.Node, year int, month time.Month) (Salary, error) {
+	ctx, t := trace.NewTask(ctx, "salary struct from html node")
+	defer t.End()
+
 	var (
 		salary = Salary{Year: year, Month: month}
 		err    error

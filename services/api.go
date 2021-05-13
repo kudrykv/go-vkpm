@@ -49,6 +49,7 @@ func (a *API) WithCookies(c config.Cookies) *API {
 }
 
 func (a *API) Login(ctx context.Context, username, password string) (config.Cookies, error) {
+	defer trace.StartRegion(ctx, "login").End()
 	ctx, task := trace.NewTask(ctx, "login")
 	defer task.End()
 
@@ -57,11 +58,12 @@ func (a *API) Login(ctx context.Context, username, password string) (config.Cook
 		return config.Cookies{}, fmt.Errorf("cookies: %w", err)
 	}
 
-	values := url.Values{}
-	values.Set("csrfmiddlewaretoken", csrf)
-	values.Set("username", username)
-	values.Set("password", password)
-	values.Set("next", "/")
+	values := url.Values{
+		"csrfmiddlewaretoken": {csrf},
+		"username":            {username},
+		"password":            {password},
+		"next":                {"/"},
+	}
 
 	h := http.Header{
 		"Accept":       {"*/*"},
@@ -98,6 +100,7 @@ func (a *API) Login(ctx context.Context, username, password string) (config.Cook
 }
 
 func (a *API) Salary(ctx context.Context, year int, month time.Month) (types.Salary, error) {
+	defer trace.StartRegion(ctx, "salary").End()
 	ctx, task := trace.NewTask(ctx, "salary")
 	defer task.End()
 
@@ -114,7 +117,7 @@ func (a *API) Salary(ctx context.Context, year int, month time.Month) (types.Sal
 		return salary, fmt.Errorf("do parse: %w", err)
 	}
 
-	if salary, err = types.NewSalaryFromHTMLNode(doc, year, month); err != nil {
+	if salary, err = types.NewSalaryFromHTMLNode(ctx, doc, year, month); err != nil {
 		return salary, fmt.Errorf("new salary from html node: %w", err)
 	}
 
@@ -122,6 +125,7 @@ func (a *API) Salary(ctx context.Context, year int, month time.Month) (types.Sal
 }
 
 func (a *API) Birthdays(ctx context.Context) (types.Persons, error) {
+	defer trace.StartRegion(ctx, "birthdays").End()
 	ctx, task := trace.NewTask(ctx, "birthdays")
 	defer task.End()
 
@@ -145,6 +149,7 @@ func (a *API) Birthdays(ctx context.Context) (types.Persons, error) {
 }
 
 func (a *API) History(ctx context.Context, year int, month time.Month) (types.ReportEntries, error) {
+	defer trace.StartRegion(ctx, "history").End()
 	ctx, task := trace.NewTask(ctx, "history")
 	defer task.End()
 
@@ -164,6 +169,7 @@ func (a *API) History(ctx context.Context, year int, month time.Month) (types.Re
 }
 
 func (a *API) VacationsHolidays(ctx context.Context, year int) (types.Vacations, types.Holidays, error) {
+	defer trace.StartRegion(ctx, "vacations holidays").End()
 	ctx, task := trace.NewTask(ctx, "vacations holidays")
 	defer task.End()
 
@@ -188,6 +194,7 @@ func (a *API) VacationsHolidays(ctx context.Context, year int) (types.Vacations,
 }
 
 func (a *API) Projects(ctx context.Context) (types.Projects, error) {
+	defer trace.StartRegion(ctx, "projects").End()
 	ctx, task := trace.NewTask(ctx, "projects")
 	defer task.End()
 
@@ -205,6 +212,7 @@ func (a *API) Projects(ctx context.Context) (types.Projects, error) {
 }
 
 func (a *API) Report(ctx context.Context, entry types.ReportEntry) (types.ReportEntry, error) {
+	defer trace.StartRegion(ctx, "report").End()
 	ctx, task := trace.NewTask(ctx, "report")
 	defer task.End()
 
@@ -356,6 +364,8 @@ func (a *API) do(
 	ctx context.Context, method, url string, body url.Values, h http.Header,
 ) ([]byte, *http.Response, error) {
 	defer trace.StartRegion(ctx, "http request").End()
+
+	trace.Logf(ctx, "httpreq", "method: %v, url: %v", method, url)
 
 	a.sem <- struct{}{}
 	defer func() { <-a.sem }()
