@@ -22,7 +22,7 @@ func TestNew(t *testing.T) {
 		Convey("brand new", func() {
 			_ = os.Remove("./test_config.yml")
 
-			cfg, err := config.New(".", "test_config.yml")
+			cfg, err := config.New(nil, ".", "test_config.yml")
 			So(err, ShouldBeNil)
 
 			cfg.Domain = "domain"
@@ -39,7 +39,7 @@ func TestNew(t *testing.T) {
 			err := ioutil.WriteFile("./test_existing_config.yml", []byte(testConfig), 0600)
 			So(err, ShouldBeNil)
 
-			cfg, err := config.New(".", "test_existing_config.yml")
+			cfg, err := config.New(nil, ".", "test_existing_config.yml")
 			So(err, ShouldBeNil)
 
 			expected := cfg // need to copy, as has internal fields. it is easier this way

@@ -1,18 +1,22 @@
 package config
 
 import (
+	"context"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"runtime/trace"
+	"time"
 
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 )
 
 type Config struct {
-	Domain         string  `yaml:"domain"`
-	DefaultProject string  `yaml:"default_project"`
-	Cookies        Cookies `yaml:"cookies"`
+	Domain         string        `yaml:"domain"`
+	DefaultProject string        `yaml:"default_project"`
+	Cookies        Cookies       `yaml:"cookies"`
+	HTTPTimeout    time.Duration `yaml:"http_timeout"`
 
 	path string
 	name string
@@ -27,7 +31,10 @@ func (c Cookies) IsZero() bool {
 	return len(c.CSRFToken) == 0 || len(c.SessionID) == 0
 }
 
-func New(path, name string) (Config, error) {
+func New(ctx context.Context, path, name string) (Config, error) {
+	ctx, task := trace.NewTask(ctx, "initialize config")
+	defer task.End()
+
 	var (
 		cfg  = Config{path: path, name: name}
 		sock *os.File
@@ -59,6 +66,10 @@ func New(path, name string) (Config, error) {
 		if err != nil {
 			return cfg, fmt.Errorf("read: %w", err)
 		}
+	}
+
+	if cfg.HTTPTimeout == 0 {
+		cfg.HTTPTimeout = 30 * time.Second
 	}
 
 	return cfg, nil

@@ -11,5 +11,5 @@ require (
 	golang.org/x/net v0.0.0-20200813134508-3edf25e44fcc
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
 	golang.org/x/term v0.0.0-20210503060354-a79de5458b56
-	gopkg.in/yaml.v2 v2.2.3
+	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
 )

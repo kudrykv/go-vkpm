@@ -21,8 +21,6 @@ var code int
 
 func main() {
 	ctx := context.Background()
-	ctx, task := trace.NewTask(ctx, "app")
-	defer task.End()
 
 	defer func() { os.Exit(code) }()
 
@@ -33,9 +31,13 @@ func main() {
 
 	defer func() { shouldExit(ctx, "stop trace", stop()) }()
 
-	region := trace.StartRegion(ctx, "initialize config")
-	cfg, err := config.New("", "")
-	region.End()
+	ctx, task := trace.NewTask(ctx, "app")
+	defer task.End()
+
+	cfg, err := config.New(ctx, "", "")
+	if shouldExit(ctx, "new config: %w", err) {
+		return
+	}
 
 	var (
 		p          = printer.Printer{W: os.Stdout, E: os.Stderr}
@@ -44,13 +46,9 @@ func main() {
 			CheckRedirect: func(*http.Request, []*http.Request) error {
 				return http.ErrUseLastResponse
 			},
-			Timeout: 5 * time.Second,
+			Timeout: cfg.HTTPTimeout,
 		}
 	)
-
-	if shouldExit(ctx, "new config: %w", err) {
-		return
-	}
 
 	api := services.NewAPI(httpClient, cfg).WithCookies(cfg.Cookies)
 
