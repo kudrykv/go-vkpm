@@ -98,14 +98,14 @@ func f2s(f float64, precision ...int) string {
 }
 
 var (
-	ErrNodeNotFound = errors.New("node not found")
 	ErrBadTotalPaid = errors.New("bad total / paid")
 
-	numRegex = regexp.MustCompile(`\d+(?:\.\d+)?`)
+	floatRegex = regexp.MustCompile(`\d+(?:\.\d+)?`)
+	intRegex   = regexp.MustCompile(`\d+`)
 )
 
 func NewSalaryFromHTMLNode(ctx context.Context, doc *html.Node, year int, month time.Month) (Salary, error) {
-	ctx, t := trace.NewTask(ctx, "salary struct from html node")
+	_, t := trace.NewTask(ctx, "salary struct from html node")
 	defer t.End()
 
 	var (
@@ -131,7 +131,7 @@ func NewSalaryFromHTMLNode(ctx context.Context, doc *html.Node, year int, month 
 	}
 
 	for _, kv := range iter {
-		if *kv.f, err = getFloat64FromNode(doc, kv.expr); err != nil {
+		if *kv.f, err = getFloaty64FromNode(doc, kv.expr); err != nil {
 			return salary, fmt.Errorf("get num from node: %w", err)
 		}
 	}
@@ -141,7 +141,7 @@ func NewSalaryFromHTMLNode(ctx context.Context, doc *html.Node, year int, month 
 		return salary, fmt.Errorf("get text from node: %w", err)
 	}
 
-	strs := numRegex.FindAllString(totalAndPaid, -1)
+	strs := floatRegex.FindAllString(totalAndPaid, -1)
 	if len(strs) != 2 {
 		return salary, fmt.Errorf(totalAndPaid+": %w", ErrBadTotalPaid)
 	}
@@ -159,13 +159,13 @@ func NewSalaryFromHTMLNode(ctx context.Context, doc *html.Node, year int, month 
 	return salary, nil
 }
 
-func getFloat64FromNode(doc *html.Node, expr string) (float64, error) {
+func getFloaty64FromNode(doc *html.Node, expr string) (float64, error) {
 	text, err := getTextFromNode(doc, expr)
 	if err != nil {
 		return 0, fmt.Errorf("get text from node: %w", err)
 	}
 
-	num, err := getNumFromString(text)
+	num, err := getFloatFromDirtyString(text)
 	if err != nil {
 		return 0, fmt.Errorf("get num from string: %w", err)
 	}
@@ -173,7 +173,7 @@ func getFloat64FromNode(doc *html.Node, expr string) (float64, error) {
 	return num, nil
 }
 
-func getIntFromNode(doc *html.Node, expr string) (int, error) {
+func getIntyFromNode(doc *html.Node, expr string) (int, error) {
 	text, err := getTextFromNode(doc, expr)
 	if err != nil {
 		return 0, fmt.Errorf("get text from node: %w", err)
@@ -183,12 +183,12 @@ func getIntFromNode(doc *html.Node, expr string) (int, error) {
 		return 0, nil
 	}
 
-	atoi, err := strconv.Atoi(text)
+	num, err := getIntFromDirtyString(text)
 	if err != nil {
-		return 0, fmt.Errorf("atoi: %w", err)
+		return 0, fmt.Errorf("get int from dirty string: %w", err)
 	}
 
-	return atoi, nil
+	return num, nil
 }
 
 func getTextFromNode(doc *html.Node, expr string) (string, error) {
@@ -236,8 +236,8 @@ func getDateFromNode(doc *html.Node, layout, expr string) (Date, error) {
 	return Date{moment}, nil
 }
 
-func getNumFromString(str string) (float64, error) {
-	numStr := numRegex.FindString(str)
+func getFloatFromDirtyString(str string) (float64, error) {
+	numStr := floatRegex.FindString(str)
 	if len(numStr) == 0 {
 		return 0, nil
 	}
@@ -248,4 +248,15 @@ func getNumFromString(str string) (float64, error) {
 	}
 
 	return num, nil
+}
+
+func getIntFromDirtyString(str string) (int, error) {
+	intStr := intRegex.FindString(str)
+
+	atoi, err := strconv.Atoi(intStr)
+	if err != nil {
+		return 0, fmt.Errorf("atoi '%s': %w", str, err)
+	}
+
+	return atoi, nil
 }

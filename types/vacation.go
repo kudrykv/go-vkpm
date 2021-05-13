@@ -154,7 +154,7 @@ func NewVacationsFromHTMLNode(doc *html.Node) (int, Vacations, error) {
 			}
 		}
 
-		if i, err = getFloat64FromNode(node, `./td[5]`); err != nil {
+		if i, err = getFloaty64FromNode(node, `./td[5]`); err != nil {
 			return 0, nil, fmt.Errorf("get float64 from node: %w", err)
 		}
 
@@ -163,7 +163,7 @@ func NewVacationsFromHTMLNode(doc *html.Node) (int, Vacations, error) {
 		vacations = append(vacations, vac)
 	}
 
-	f, err := getFloat64FromNode(doc, `//div[@class="vac_status_message"]`)
+	f, err := getFloaty64FromNode(doc, `//div[@class="vac_status_message"]`)
 	if err != nil {
 		return 0, nil, fmt.Errorf("get float64 from node: %w", err)
 	}

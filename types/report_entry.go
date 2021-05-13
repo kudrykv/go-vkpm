@@ -529,7 +529,7 @@ func NewReportEntriesFromHTMLNode(ctx context.Context, doc *html.Node) (ReportEn
 			}
 		}
 
-		if entry.Status, err = getIntFromNode(node, `./td[8]`); err != nil {
+		if entry.Status, err = getIntyFromNode(node, `./td[8]`); err != nil {
 			return nil, fmt.Errorf("get int from node: %w", err)
 		}
 
