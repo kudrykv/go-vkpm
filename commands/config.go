@@ -5,7 +5,7 @@ import (
 	"regexp"
 	"runtime/trace"
 
-	"github.com/kudrykv/go-vkpm/config"
+	"github.com/kudrykv/vkpm/config"
 	"github.com/urfave/cli/v2"
 )
 
