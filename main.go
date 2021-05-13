@@ -33,6 +33,10 @@ func main() {
 
 	defer func() { shouldExit(ctx, "stop trace", stop()) }()
 
+	region := trace.StartRegion(ctx, "initialize config")
+	cfg, err := config.New("", "")
+	region.End()
+
 	var (
 		p          = printer.Printer{W: os.Stdout, E: os.Stderr}
 		httpClient = &http.Client{
@@ -42,13 +46,7 @@ func main() {
 			},
 			Timeout: 5 * time.Second,
 		}
-
-		cfg config.Config
 	)
-
-	region := trace.StartRegion(ctx, "initialize config")
-	cfg, err = config.New("", "")
-	region.End()
 
 	if shouldExit(ctx, "new config: %w", err) {
 		return
