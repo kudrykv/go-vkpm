@@ -16,6 +16,7 @@ import (
 
 	"github.com/antchfx/htmlquery"
 	"github.com/kudrykv/vkpm/config"
+	"github.com/kudrykv/vkpm/th"
 	"github.com/kudrykv/vkpm/types"
 	"golang.org/x/net/html"
 )
@@ -49,9 +50,8 @@ func (a *API) WithCookies(c config.Cookies) *API {
 }
 
 func (a *API) Login(ctx context.Context, username, password string) (config.Cookies, error) {
-	defer trace.StartRegion(ctx, "login").End()
-	ctx, task := trace.NewTask(ctx, "login")
-	defer task.End()
+	ctx, end := th.RegionTask(ctx, "login")
+	defer end()
 
 	csrf, err := a.cookies(ctx)
 	if err != nil {
@@ -100,9 +100,8 @@ func (a *API) Login(ctx context.Context, username, password string) (config.Cook
 }
 
 func (a *API) Salary(ctx context.Context, year int, month time.Month) (types.Salary, error) {
-	defer trace.StartRegion(ctx, "salary").End()
-	ctx, task := trace.NewTask(ctx, "salary")
-	defer task.End()
+	ctx, end := th.RegionTask(ctx, "salary")
+	defer end()
 
 	var salary types.Salary
 
@@ -125,9 +124,8 @@ func (a *API) Salary(ctx context.Context, year int, month time.Month) (types.Sal
 }
 
 func (a *API) Birthdays(ctx context.Context) (types.Persons, error) {
-	defer trace.StartRegion(ctx, "birthdays").End()
-	ctx, task := trace.NewTask(ctx, "birthdays")
-	defer task.End()
+	ctx, end := th.RegionTask(ctx, "birthdays")
+	defer end()
 
 	if err := a.allBlocksOn(ctx); err != nil {
 		return nil, fmt.Errorf("turn blocks on: %w", err)
@@ -149,9 +147,8 @@ func (a *API) Birthdays(ctx context.Context) (types.Persons, error) {
 }
 
 func (a *API) History(ctx context.Context, year int, month time.Month) (types.ReportEntries, error) {
-	defer trace.StartRegion(ctx, "history").End()
-	ctx, task := trace.NewTask(ctx, "history")
-	defer task.End()
+	ctx, end := th.RegionTask(ctx, "history")
+	defer end()
 
 	body := url.Values{"year": {strconv.Itoa(year)}, "month": {strconv.Itoa(int(month))}}
 
@@ -169,9 +166,8 @@ func (a *API) History(ctx context.Context, year int, month time.Month) (types.Re
 }
 
 func (a *API) VacationsHolidays(ctx context.Context, year int) (types.Vacations, types.Holidays, error) {
-	defer trace.StartRegion(ctx, "vacations holidays").End()
-	ctx, task := trace.NewTask(ctx, "vacations holidays")
-	defer task.End()
+	ctx, end := th.RegionTask(ctx, "vacations holidays")
+	defer end()
 
 	body := url.Values{"year": {strconv.Itoa(year)}, "year_changed": {"true"}}
 
@@ -194,9 +190,8 @@ func (a *API) VacationsHolidays(ctx context.Context, year int) (types.Vacations,
 }
 
 func (a *API) Projects(ctx context.Context) (types.Projects, error) {
-	defer trace.StartRegion(ctx, "projects").End()
-	ctx, task := trace.NewTask(ctx, "projects")
-	defer task.End()
+	ctx, end := th.RegionTask(ctx, "projects")
+	defer end()
 
 	doc, err := a.doParse(ctx, http.MethodGet, "/report/", nil)
 	if err != nil {
@@ -212,9 +207,8 @@ func (a *API) Projects(ctx context.Context) (types.Projects, error) {
 }
 
 func (a *API) Report(ctx context.Context, entry types.ReportEntry) (types.ReportEntry, error) {
-	defer trace.StartRegion(ctx, "report").End()
-	ctx, task := trace.NewTask(ctx, "report")
-	defer task.End()
+	ctx, end := th.RegionTask(ctx, "report")
+	defer end()
 
 	body, err := entry.URLValues()
 	if err != nil {
