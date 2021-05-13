@@ -55,7 +55,7 @@ func main() {
 	app := &cli.App{
 		Name:    "vkpm",
 		Usage:   "cli tool to avoid clicking through VKPM UI",
-		Version: "0.0.1",
+		Version: "0.0.2",
 		Commands: []*cli.Command{
 			commands.Config(cfg),
 			commands.Login(p, cfg, api),
