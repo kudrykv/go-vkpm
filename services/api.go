@@ -63,29 +63,16 @@ func (a *API) Login(ctx context.Context, username, password string) (config.Cook
 	values.Set("password", password)
 	values.Set("next", "/")
 
-	buff := bytes.NewBufferString(values.Encode())
-
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, "https://"+a.cfg.Domain+"/login/", buff)
-	if err != nil {
-		return config.Cookies{}, fmt.Errorf("post /login/: %w", err)
+	h := http.Header{
+		"Accept":       {"*/*"},
+		"Referer":      {"https://" + a.cfg.Domain + "/login/"},
+		"Cookie":       {"csrftoken=" + csrf},
+		"Content-Type": {"application/x-www-form-urlencoded"},
 	}
 
-	req.Header.Set("Accept", "*/*")
-	req.Header.Set("Referer", "https://"+a.cfg.Domain+"/login/")
-	req.Header.Set("Cookie", "csrftoken="+csrf)
-	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-
-	resp, err := a.hc.Do(req)
+	_, resp, err := a.do(ctx, http.MethodPost, "https://"+a.cfg.Domain+"/login/", values, h)
 	if err != nil {
 		return config.Cookies{}, fmt.Errorf("do: %w", err)
-	}
-
-	if _, err = ioutil.ReadAll(resp.Body); err != nil {
-		return config.Cookies{}, fmt.Errorf("read all: %w", err)
-	}
-
-	if err = resp.Body.Close(); err != nil {
-		return config.Cookies{}, fmt.Errorf("close: %w", err)
 	}
 
 	cc := config.Cookies{}
