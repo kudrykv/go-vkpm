@@ -63,8 +63,6 @@ func Stat(p printer.Printer, cfg config.Config, api *services.API) *cli.Command 
 			salaries := salariesChanToSlice(salariesChan)
 			histories := historiesChanToSlice(historiesChan)
 
-			p.Println(salaries)
-			p.Println()
 			p.Println(types.StatSalaryHistory{
 				Year: year, Salaries: salaries, Histories: histories,
 				StartMonth: startMonth,
