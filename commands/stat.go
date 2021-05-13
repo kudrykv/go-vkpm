@@ -3,7 +3,6 @@ package commands
 import (
 	"context"
 	"fmt"
-	"runtime/trace"
 	"sort"
 	"time"
 
@@ -11,6 +10,7 @@ import (
 	"github.com/kudrykv/vkpm/config"
 	"github.com/kudrykv/vkpm/printer"
 	"github.com/kudrykv/vkpm/services"
+	"github.com/kudrykv/vkpm/th"
 	"github.com/kudrykv/vkpm/types"
 	"github.com/urfave/cli/v2"
 	"golang.org/x/sync/errgroup"
@@ -29,8 +29,8 @@ func Stat(p printer.Printer, cfg config.Config, api *services.API) *cli.Command 
 		},
 		Before: before.IsHTTPAuthMeet(cfg),
 		Action: func(c *cli.Context) error {
-			ctx, task := trace.NewTask(c.Context, "stat")
-			defer task.End()
+			ctx, end := th.RegionTask(c.Context, "stat")
+			defer end()
 
 			startMonth := time.January
 			endMonth := time.December

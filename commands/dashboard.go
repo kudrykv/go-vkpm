@@ -3,12 +3,12 @@ package commands
 import (
 	"context"
 	"fmt"
-	"runtime/trace"
 
 	"github.com/kudrykv/vkpm/commands/before"
 	"github.com/kudrykv/vkpm/config"
 	"github.com/kudrykv/vkpm/printer"
 	"github.com/kudrykv/vkpm/services"
+	"github.com/kudrykv/vkpm/th"
 	"github.com/kudrykv/vkpm/types"
 	"github.com/urfave/cli/v2"
 	"golang.org/x/sync/errgroup"
@@ -20,8 +20,8 @@ func Dashboard(p printer.Printer, cfg config.Config, api *services.API) *cli.Com
 		Usage:  "see stats for the current month",
 		Before: before.IsHTTPAuthMeet(cfg),
 		Action: func(c *cli.Context) error {
-			ctx, task := trace.NewTask(c.Context, "dashboard")
-			defer task.End()
+			ctx, end := th.RegionTask(c.Context, "dashboard")
+			defer end()
 
 			var (
 				thisMonthSalary types.Salary

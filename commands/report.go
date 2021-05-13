@@ -4,13 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"runtime/trace"
 	"time"
 
 	"github.com/kudrykv/vkpm/commands/before"
 	"github.com/kudrykv/vkpm/config"
 	"github.com/kudrykv/vkpm/printer"
 	"github.com/kudrykv/vkpm/services"
+	"github.com/kudrykv/vkpm/th"
 	"github.com/kudrykv/vkpm/types"
 	"github.com/urfave/cli/v2"
 	"golang.org/x/sync/errgroup"
@@ -84,8 +84,8 @@ func Report(p printer.Printer, cfg config.Config, api *services.API) *cli.Comman
 			},
 		},
 		Action: func(c *cli.Context) error {
-			ctx, task := trace.NewTask(c.Context, "report")
-			defer task.End()
+			ctx, end := th.RegionTask(c.Context, "report")
+			defer end()
 
 			var (
 				history  types.ReportEntries
