@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"os"
@@ -19,18 +20,18 @@ import (
 var code int
 
 func main() {
-	defer func() { os.Exit(code) }()
-
-	err, stop := enabledTrace()
-	if shouldExit("enabled trace", err) {
-		return
-	}
-
-	defer func() { shouldExit("stop trace", stop()) }()
-
 	ctx := context.Background()
 	ctx, task := trace.NewTask(ctx, "app")
 	defer task.End()
+
+	defer func() { os.Exit(code) }()
+
+	err, stop := enabledTrace(ctx)
+	if shouldExit(ctx, "enabled trace", err) {
+		return
+	}
+
+	defer func() { shouldExit(ctx, "stop trace", stop()) }()
 
 	var (
 		p          = printer.Printer{W: os.Stdout, E: os.Stderr}
@@ -39,7 +40,7 @@ func main() {
 			CheckRedirect: func(*http.Request, []*http.Request) error {
 				return http.ErrUseLastResponse
 			},
-			Timeout: 30 * time.Second,
+			Timeout: 5 * time.Second,
 		}
 
 		cfg config.Config
@@ -49,7 +50,7 @@ func main() {
 	cfg, err = config.New("", "")
 	region.End()
 
-	if shouldExit("new config: %w", err) {
+	if shouldExit(ctx, "new config: %w", err) {
 		return
 	}
 
@@ -67,10 +68,12 @@ func main() {
 		},
 	}
 
-	shouldExit("", app.RunContext(ctx, os.Args))
+	shouldExit(ctx, "", app.RunContext(ctx, os.Args))
 }
 
-func enabledTrace() (error, func() error) {
+func enabledTrace(ctx context.Context) (error, func() error) {
+	defer trace.StartRegion(ctx, "enable trace").End()
+
 	noop := func() error { return nil }
 
 	if os.Getenv("VKPM_ENABLE_TRACE") != "1" {
@@ -101,32 +104,40 @@ func enabledTrace() (error, func() error) {
 	}
 }
 
-// nolint:forbidigo
-func shouldExit(msg string, err error) bool {
+func shouldExit(ctx context.Context, msg string, err error) bool {
+	defer trace.StartRegion(ctx, "should exit").End()
+
 	if err == nil {
 		return false
 	}
 
 	code = 1
 
+	printErr(ctx, msg, err)
+
+	return true
+}
+
+// nolint:forbidigo
+func printErr(ctx context.Context, msg string, err error) {
+	defer trace.StartRegion(ctx, "print err").End()
+
 	if len(msg) > 0 {
 		err = fmt.Errorf("%s: %w", msg, err)
 	}
 
-	split := strings.Split(err.Error(), ":")
-
 	indent := 0
-	for i, msg := range split {
+	a, b := errors.Unwrap(err), err
+
+	for a != nil {
+		index := strings.Index(b.Error(), a.Error())
+
 		fmt.Print(strings.Repeat(" ", indent))
-
-		if i+1 == len(split) {
-			fmt.Println(msg)
-		} else {
-			fmt.Println(msg + ":")
-		}
-
+		fmt.Println(b.Error()[0:index])
 		indent += 2
+		a, b = errors.Unwrap(a), a
 	}
 
-	return true
+	fmt.Print(strings.Repeat(" ", indent))
+	fmt.Println(b.Error())
 }
