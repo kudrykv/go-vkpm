@@ -53,7 +53,9 @@ func main() {
 	api := services.NewAPI(httpClient, cfg).WithCookies(cfg.Cookies)
 
 	app := &cli.App{
-		Name: "vkpm",
+		Name:    "vkpm",
+		Usage:   "cli tool to avoid clicking through VKPM UI",
+		Version: "0.0.1",
 		Commands: []*cli.Command{
 			commands.Config(cfg),
 			commands.Login(p, cfg, api),

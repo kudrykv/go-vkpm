@@ -21,7 +21,7 @@ var (
 func Config(cfg config.Config) *cli.Command {
 	return &cli.Command{
 		Name:  "config",
-		Usage: "update vkpm config",
+		Usage: "change config",
 		Flags: []cli.Flag{
 			&cli.StringFlag{Name: flagDomain, Usage: "domain to use, e.g., domain.com"},
 			&cli.StringFlag{Name: flagDefProj, Usage: "report default project"},

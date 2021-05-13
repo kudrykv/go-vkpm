@@ -22,7 +22,8 @@ const (
 
 func Stat(p printer.Printer, cfg config.Config, api *services.API) *cli.Command {
 	return &cli.Command{
-		Name: "stat",
+		Name:  "stat",
+		Usage: "show money and hour stat for the given year",
 		Flags: []cli.Flag{
 			&cli.IntFlag{Name: flagYear, Required: true},
 		},

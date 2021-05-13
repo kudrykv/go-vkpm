@@ -38,6 +38,7 @@ var (
 func Report(p printer.Printer, cfg config.Config, api *services.API) *cli.Command {
 	return &cli.Command{
 		Name:   "report",
+		Usage:  "report time",
 		Before: before.IsHTTPAuthMeet(cfg),
 		Flags: []cli.Flag{
 			&cli.TimestampFlag{Name: flagFor, Layout: "01-02", DefaultText: "not set"},

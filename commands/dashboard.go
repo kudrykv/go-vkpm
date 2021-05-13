@@ -17,6 +17,7 @@ import (
 func Dashboard(p printer.Printer, cfg config.Config, api *services.API) *cli.Command {
 	return &cli.Command{
 		Name:   "dashboard",
+		Usage:  "see stats for the current month",
 		Before: before.IsHTTPAuthMeet(cfg),
 		Action: func(c *cli.Context) error {
 			ctx, task := trace.NewTask(c.Context, "dashboard")

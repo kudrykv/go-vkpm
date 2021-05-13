@@ -15,6 +15,7 @@ import (
 func History(p printer.Printer, cfg config.Config, api *services.API) *cli.Command {
 	return &cli.Command{
 		Name:   "history",
+		Usage:  "show reported hours",
 		Before: before.IsHTTPAuthMeet(cfg),
 		Action: func(c *cli.Context) error {
 			ctx, task := trace.NewTask(c.Context, "history")
