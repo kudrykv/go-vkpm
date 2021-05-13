@@ -25,7 +25,7 @@ func Stat(p printer.Printer, cfg config.Config, api *services.API) *cli.Command 
 		Name:  "stat",
 		Usage: "show money and hour stat for the given year",
 		Flags: []cli.Flag{
-			&cli.IntFlag{Name: flagYear, Required: true},
+			&cli.IntFlag{Name: flagYear, Value: time.Now().Year()},
 		},
 		Before: before.IsHTTPAuthMeet(cfg),
 		Action: func(c *cli.Context) error {
