@@ -1,11 +1,13 @@
 package types
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"strings"
 
 	"github.com/antchfx/htmlquery"
+	"github.com/kudrykv/vkpm/th"
 	"golang.org/x/net/html"
 )
 
@@ -55,10 +57,14 @@ type Project struct {
 	Name string
 }
 
-func NewProjectsFromHTMLNode(doc *html.Node) (Projects, error) {
-	nodes, err := htmlquery.QueryAll(doc, `//select[@id="id_project"]/option`)
+func NewProjectsFromHTMLNode(ctx context.Context, doc *html.Node) (Projects, error) {
+	_, end := th.RegionTask(ctx, "new projects from html node")
+	defer end()
+
+	expr := `//select[@id="id_project"]/option`
+	nodes, err := htmlquery.QueryAll(doc, expr)
 	if err != nil {
-		return nil, fmt.Errorf("query all: %w", err)
+		return nil, fmt.Errorf("query all '%s': %w", expr, err)
 	}
 
 	projects := make(Projects, 0, len(nodes))

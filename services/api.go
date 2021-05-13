@@ -138,7 +138,7 @@ func (a *API) Birthdays(ctx context.Context) (types.Persons, error) {
 		return nil, fmt.Errorf("do parse: %w", err)
 	}
 
-	persons, err := types.NewPersonsFromHTMLNode(doc)
+	persons, err := types.NewPersonsFromHTMLNode(ctx, doc)
 	if err != nil {
 		return nil, fmt.Errorf("new persons from html node: %w", err)
 	}
@@ -157,7 +157,7 @@ func (a *API) History(ctx context.Context, year int, month time.Month) (types.Re
 		return nil, fmt.Errorf("do parse: %w", err)
 	}
 
-	entries, err := types.NewReportEntriesFromHTMLNode(doc)
+	entries, err := types.NewReportEntriesFromHTMLNode(ctx, doc)
 	if err != nil {
 		return nil, fmt.Errorf("new report entries from html node: %w", err)
 	}
@@ -198,7 +198,7 @@ func (a *API) Projects(ctx context.Context) (types.Projects, error) {
 		return nil, fmt.Errorf("do parse: %w", err)
 	}
 
-	projects, err := types.NewProjectsFromHTMLNode(doc)
+	projects, err := types.NewProjectsFromHTMLNode(ctx, doc)
 	if err != nil {
 		return nil, fmt.Errorf("new projects from html node: %w", err)
 	}
