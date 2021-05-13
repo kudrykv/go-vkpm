@@ -165,7 +165,7 @@ func (a *API) History(ctx context.Context, year int, month time.Month) (types.Re
 	return entries, nil
 }
 
-func (a *API) VacationsHolidays(ctx context.Context, year int) (types.Vacations, types.Holidays, error) {
+func (a *API) VacationsHolidays(ctx context.Context, year int) (int, types.Vacations, types.Holidays, error) {
 	ctx, end := th.RegionTask(ctx, "vacations holidays")
 	defer end()
 
@@ -173,20 +173,20 @@ func (a *API) VacationsHolidays(ctx context.Context, year int) (types.Vacations,
 
 	doc, err := a.doParse(ctx, http.MethodPost, "/vacations/", body)
 	if err != nil {
-		return nil, nil, fmt.Errorf("do parse: %w", err)
+		return 0, nil, nil, fmt.Errorf("do parse: %w", err)
 	}
 
-	vacations, err := types.NewVacationsFromHTMLNode(doc)
+	paidVacDays, vacations, err := types.NewVacationsFromHTMLNode(doc)
 	if err != nil {
-		return nil, nil, fmt.Errorf("new vacations from html node: %w", err)
+		return 0, nil, nil, fmt.Errorf("new vacations from html node: %w", err)
 	}
 
 	holidays, err := types.NewHolidaysFromHTMLNode(ctx, doc)
 	if err != nil {
-		return nil, nil, fmt.Errorf("new holidays from html node: %w", err)
+		return 0, nil, nil, fmt.Errorf("new holidays from html node: %w", err)
 	}
 
-	return vacations, holidays, nil
+	return paidVacDays, vacations, holidays, nil
 }
 
 func (a *API) Projects(ctx context.Context) (types.Projects, error) {

@@ -60,7 +60,7 @@ func getVacationsHolidays(
 ) func() error {
 	return func() error {
 		var err error
-		if *vacations, *holidays, err = api.VacationsHolidays(cctx, moment.Year()); err != nil {
+		if _, *vacations, *holidays, err = api.VacationsHolidays(cctx, moment.Year()); err != nil {
 			return fmt.Errorf("vacations in %d: %w", moment.Year(), err)
 		}
 

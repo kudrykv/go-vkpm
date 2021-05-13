@@ -63,6 +63,7 @@ func main() {
 			commands.Report(p, cfg, api),
 			commands.History(p, cfg, api),
 			commands.Stat(p, cfg, api),
+			commands.Vacations(p, cfg, api),
 		},
 	}
 
