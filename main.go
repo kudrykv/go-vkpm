@@ -28,8 +28,11 @@ func main() {
 
 	defer func() { shouldExit("stop trace", stop()) }()
 
+	ctx := context.Background()
+	ctx, task := trace.NewTask(ctx, "app")
+	defer task.End()
+
 	var (
-		ctx        = context.Background()
 		p          = printer.Printer{W: os.Stdout, E: os.Stderr}
 		httpClient = &http.Client{
 			Transport: http.DefaultTransport,
@@ -41,9 +44,6 @@ func main() {
 
 		cfg config.Config
 	)
-
-	ctx, task := trace.NewTask(ctx, "app")
-	defer task.End()
 
 	region := trace.StartRegion(ctx, "initialize config")
 	cfg, err = config.New("", "")
