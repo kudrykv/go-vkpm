@@ -6,9 +6,9 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"runtime/trace"
 	"time"
 
+	"github.com/kudrykv/vkpm/th"
 	"gopkg.in/yaml.v3"
 )
 
@@ -32,8 +32,8 @@ func (c Cookies) IsZero() bool {
 }
 
 func New(ctx context.Context, path, name string) (Config, error) {
-	ctx, task := trace.NewTask(ctx, "initialize config")
-	defer task.End()
+	_, end := th.RegionTask(ctx, "initialize config")
+	defer end()
 
 	var (
 		cfg  = Config{path: path, name: name}

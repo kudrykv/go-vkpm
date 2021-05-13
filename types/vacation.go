@@ -2,6 +2,7 @@ package types
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/antchfx/htmlquery"
@@ -9,6 +10,21 @@ import (
 )
 
 type Vacations []Vacation
+
+func (vv Vacations) String() string {
+	s := make([]string, 0, len(vv))
+
+	for _, v := range vv {
+		ft := []string{v.StartDate.Format("January 2")}
+		if !v.EndDate.IsZero() {
+			ft = append(ft, v.EndDate.Format("January 2"))
+		}
+
+		s = append(s, "#"+v.ID+" "+v.Status+" "+v.Type+" "+strings.Join(ft, " - "))
+	}
+
+	return strings.Join(s, "\n")
+}
 
 func (v Vacations) Vacated(day Date) bool {
 	for _, vac := range v {
@@ -85,10 +101,10 @@ func (v Vacation) InMonth(day Date) bool {
 	return false
 }
 
-func NewVacationsFromHTMLNode(doc *html.Node) (Vacations, error) {
+func NewVacationsFromHTMLNode(doc *html.Node) (int, Vacations, error) {
 	nodes, err := htmlquery.QueryAll(doc, `//table[@id="vacations"]/tbody/tr`)
 	if err != nil {
-		return nil, fmt.Errorf("query all: %w", err)
+		return 0, nil, fmt.Errorf("query all: %w", err)
 	}
 
 	vacations := make(Vacations, 0, len(nodes))
@@ -100,7 +116,7 @@ func NewVacationsFromHTMLNode(doc *html.Node) (Vacations, error) {
 		var i float64
 
 		if vac.Type, err = getTextFromNode(node, `./td[2]`); err != nil {
-			return nil, fmt.Errorf("get text from node: %w", err)
+			return 0, nil, fmt.Errorf("get text from node: %w", err)
 		}
 
 		if vac.Type == "Vacation Compensation" {
@@ -118,28 +134,28 @@ func NewVacationsFromHTMLNode(doc *html.Node) (Vacations, error) {
 
 		for _, kv := range strs {
 			if *kv.s, err = getTextFromNode(node, kv.expr); err != nil {
-				return nil, fmt.Errorf("get text from node: %w", err)
+				return 0, nil, fmt.Errorf("get text from node: %w", err)
 			}
 		}
 
 		vac.Paid = paidStr == "Paid"
 
 		if vac.StartDate, err = getDateFromNode(node, `2 January 2006`, `./td[3]`); err != nil {
-			return nil, fmt.Errorf("get time from node: %w", err)
+			return 0, nil, fmt.Errorf("get time from node: %w", err)
 		}
 
 		if str, err = getTextFromNode(node, `./td[4]`); err != nil {
-			return nil, fmt.Errorf("get text from node: %w", err)
+			return 0, nil, fmt.Errorf("get text from node: %w", err)
 		}
 
 		if str != "-" {
 			if vac.EndDate, err = ParseDate("2 January 2006", str); err != nil {
-				return nil, fmt.Errorf("time parse: %w", err)
+				return 0, nil, fmt.Errorf("time parse: %w", err)
 			}
 		}
 
-		if i, err = getFloat64FromNode(node, `./td[5]`); err != nil {
-			return nil, fmt.Errorf("get float64 from node: %w", err)
+		if i, err = getFloaty64FromNode(node, `./td[5]`); err != nil {
+			return 0, nil, fmt.Errorf("get float64 from node: %w", err)
 		}
 
 		vac.Span = time.Duration(i*24) * time.Hour
@@ -147,5 +163,10 @@ func NewVacationsFromHTMLNode(doc *html.Node) (Vacations, error) {
 		vacations = append(vacations, vac)
 	}
 
-	return vacations, nil
+	f, err := getFloaty64FromNode(doc, `//div[@class="vac_status_message"]`)
+	if err != nil {
+		return 0, nil, fmt.Errorf("get float64 from node: %w", err)
+	}
+
+	return int(f), vacations, nil
 }

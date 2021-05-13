@@ -1,6 +1,7 @@
 package types
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/url"
@@ -10,6 +11,7 @@ import (
 	"time"
 
 	"github.com/antchfx/htmlquery"
+	"github.com/kudrykv/vkpm/th"
 	"golang.org/x/net/html"
 )
 
@@ -464,10 +466,14 @@ func (e ReportEntry) StringShort() string {
 	return "#" + e.ID + " " + e.Span.String() + " " + e.Name
 }
 
-func NewReportEntriesFromHTMLNode(doc *html.Node) (ReportEntries, error) {
-	nodes, err := htmlquery.QueryAll(doc, `//table[@id="history"]//tbody/tr`)
+func NewReportEntriesFromHTMLNode(ctx context.Context, doc *html.Node) (ReportEntries, error) {
+	_, end := th.RegionTask(ctx, "new report entries from html node")
+	defer end()
+
+	expr := `//table[@id="history"]//tbody/tr`
+	nodes, err := htmlquery.QueryAll(doc, expr)
 	if err != nil {
-		return nil, fmt.Errorf("query all: %w", err)
+		return nil, fmt.Errorf("query all '%s': %w", expr, err)
 	}
 
 	entries := make(ReportEntries, 0, len(nodes))
@@ -523,7 +529,7 @@ func NewReportEntriesFromHTMLNode(doc *html.Node) (ReportEntries, error) {
 			}
 		}
 
-		if entry.Status, err = getIntFromNode(node, `./td[8]`); err != nil {
+		if entry.Status, err = getIntyFromNode(node, `./td[8]`); err != nil {
 			return nil, fmt.Errorf("get int from node: %w", err)
 		}
 
@@ -537,7 +543,7 @@ func NewReportEntriesFromHTMLNode(doc *html.Node) (ReportEntries, error) {
 		}
 
 		if entry.Span, err = time.ParseDuration(text); err != nil {
-			return nil, fmt.Errorf("parse duration: %w", err)
+			return nil, fmt.Errorf("parse duration '%s': %w", text, err)
 		}
 
 		entries = append(entries, entry)

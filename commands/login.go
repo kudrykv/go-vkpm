@@ -4,12 +4,12 @@ import (
 	"bufio"
 	"fmt"
 	"os"
-	"runtime/trace"
 
 	"github.com/kudrykv/vkpm/commands/before"
 	"github.com/kudrykv/vkpm/config"
 	"github.com/kudrykv/vkpm/printer"
 	"github.com/kudrykv/vkpm/services"
+	"github.com/kudrykv/vkpm/th"
 	"github.com/urfave/cli/v2"
 	"golang.org/x/term"
 )
@@ -22,8 +22,8 @@ func Login(p printer.Printer, cfg config.Config, api *services.API) *cli.Command
 		Before: before.IsDomainSet(cfg),
 
 		Action: func(c *cli.Context) error {
-			ctx, task := trace.NewTask(c.Context, "login")
-			defer task.End()
+			ctx, end := th.RegionTask(c.Context, "login")
+			defer end()
 
 			reader := bufio.NewReader(os.Stdin)
 

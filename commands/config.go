@@ -3,9 +3,9 @@ package commands
 import (
 	"fmt"
 	"regexp"
-	"runtime/trace"
 
 	"github.com/kudrykv/vkpm/config"
+	"github.com/kudrykv/vkpm/th"
 	"github.com/urfave/cli/v2"
 )
 
@@ -28,8 +28,8 @@ func Config(cfg config.Config) *cli.Command {
 		},
 
 		Action: func(c *cli.Context) error {
-			_, task := trace.NewTask(c.Context, "config")
-			defer task.End()
+			_, end := th.RegionTask(c.Context, "config")
+			defer end()
 
 			if domain := c.String(flagDomain); len(domain) > 0 {
 				if httpsRegexp.MatchString(domain) {
