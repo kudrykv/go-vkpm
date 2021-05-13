@@ -15,7 +15,7 @@ import (
 func Vacations(p printer.Printer, cfg config.Config, api *services.API) *cli.Command {
 	return &cli.Command{
 		Name:   "vacations",
-		Usage:  "show requested vacations",
+		Usage:  "show requested and approved vacations",
 		Before: before.IsHTTPAuthMeet(cfg),
 		Flags: []cli.Flag{
 			&cli.IntFlag{Name: flagYear, Value: time.Now().Year()},
