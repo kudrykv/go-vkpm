@@ -37,19 +37,51 @@ var (
 
 func Report(p printer.Printer, cfg config.Config, api *services.API) *cli.Command {
 	return &cli.Command{
-		Name:   "report",
-		Usage:  "report time",
+		Name:  "report",
+		Usage: "report time",
+		Description: "" +
+			"Report time spent.\n\n" +
+			"One need to specify the project, time frame and a message as a minimal number of parameters:\n\n" +
+			"    vkpm report --proj projname --span 2h -m 'developing custom cli tools'\n\n" +
+			"Time can be specifed as a span (--span 2h), or a from-to range (--from 10:00 --to 12:00).\n" +
+			"If specified as a span, reports start from 09:00 of the given day, and stack one at each other.\n\n" +
+			"    vkpm report --proj projname --span 2h -m 'dev cli tools'         # 09:00-11:00\n" +
+			"    vkpm report --proj projname --span 2h -m 'doing other dev stuff' # 11:00-13:00\n\n",
 		Before: before.IsHTTPAuthMeet(cfg),
 		Flags: []cli.Flag{
-			&cli.TimestampFlag{Name: flagFor, Layout: "01-02", DefaultText: "not set"},
-			&cli.StringFlag{Name: flagProj},
-			&cli.DurationFlag{Name: flagSpan, DefaultText: "not set"},
-			&cli.TimestampFlag{Layout: "15:04", Name: flagFrom, DefaultText: "not set"},
-			&cli.TimestampFlag{Layout: "15:04", Name: flagTo, DefaultText: "not set"},
-			&cli.IntFlag{Name: flagStatus, Value: 100},
-			&cli.StringFlag{Name: flagActivity, Value: types.ActivityDevelopment},
-			&cli.StringFlag{Name: flagTitle},
-			&cli.StringFlag{Name: flagMessage, Aliases: []string{"m"}, Required: true},
+			&cli.StringFlag{
+				Name: flagProj, Aliases: []string{"p"},
+				Usage: "report for the specified project. Use default if not set",
+			},
+			&cli.TimestampFlag{
+				Name: flagFor, Layout: "01-02", DefaultText: "today", Aliases: []string{"F"},
+				Usage: "report date, specified in format MM-DD",
+			},
+			&cli.DurationFlag{
+				Name: flagSpan, DefaultText: "not set", Aliases: []string{"s"},
+				Usage: "time spent, e.g., 1h or 2h30m",
+			},
+			&cli.TimestampFlag{
+				Layout: "15:04", Name: flagFrom, DefaultText: "not set", Aliases: []string{"f"},
+				Usage: "start of the time range in format HH:MM",
+			},
+			&cli.TimestampFlag{
+				Layout: "15:04", Name: flagTo, DefaultText: "not set", Aliases: []string{"t"},
+				Usage: "end of the time range",
+			},
+			&cli.IntFlag{
+				Name: flagStatus, Value: 100, Aliases: []string{"S"},
+				Usage: "completeness, multiple of ten -- 0, 10, ..., 100",
+			},
+			&cli.StringFlag{
+				Name: flagActivity, Value: types.ActivityDevelopment, Aliases: []string{"a"},
+				Usage: "estimate, development, testing, bugfixing, management, analysis",
+			},
+			&cli.StringFlag{Name: flagTitle, Aliases: []string{"T"}, Usage: "report title", DefaultText: "project name"},
+			&cli.StringFlag{
+				Name: flagMessage, Aliases: []string{"m"}, Required: true,
+				Usage: "what did you do in the given time frame",
+			},
 		},
 		Action: func(c *cli.Context) error {
 			ctx, task := trace.NewTask(c.Context, "report")

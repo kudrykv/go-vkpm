@@ -24,7 +24,7 @@ func Config(cfg config.Config) *cli.Command {
 		Usage: "change config",
 		Flags: []cli.Flag{
 			&cli.StringFlag{Name: flagDomain, Usage: "domain to use, e.g., domain.com"},
-			&cli.StringFlag{Name: flagDefProj, Usage: "report default project"},
+			&cli.StringFlag{Name: flagDefProj, Usage: "report time for the given project if none specifed in report"},
 		},
 
 		Action: func(c *cli.Context) error {
