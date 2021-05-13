@@ -70,7 +70,7 @@ func (a *API) Login(ctx context.Context, username, password string) (config.Cook
 		"Content-Type": {"application/x-www-form-urlencoded"},
 	}
 
-	_, resp, err := a.do(ctx, http.MethodPost, "https://"+a.cfg.Domain+"/login/", values, h)
+	_, resp, err := a.do(ctx, http.MethodPost, "/login/", values, h)
 	if err != nil {
 		return config.Cookies{}, fmt.Errorf("do: %w", err)
 	}
@@ -213,7 +213,7 @@ func (a *API) Report(ctx context.Context, entry types.ReportEntry) (types.Report
 		return entry, fmt.Errorf("url values: %w", err)
 	}
 
-	bts, resp, err := a.do(ctx, http.MethodPost, "https://"+a.cfg.Domain+"/report/", body, a.h())
+	bts, resp, err := a.do(ctx, http.MethodPost, "/report/", body, a.h())
 	if err != nil {
 		return entry, fmt.Errorf("do: %w", err)
 	}
@@ -242,7 +242,7 @@ func (a *API) Report(ctx context.Context, entry types.ReportEntry) (types.Report
 func (a *API) doParse(ctx context.Context, method, url string, body url.Values) (*html.Node, error) {
 	defer trace.StartRegion(ctx, "do and parse").End()
 
-	bts, resp, err := a.do(ctx, method, "https://"+a.cfg.Domain+url, body, a.h())
+	bts, resp, err := a.do(ctx, method, url, body, a.h())
 	if err != nil {
 		return nil, fmt.Errorf("do: %w", err)
 	}
@@ -275,7 +275,7 @@ func (a *API) allBlocksOn(ctx context.Context) error {
 
 	h := a.h()
 
-	bts, _, err := a.do(ctx, http.MethodGet, "https://"+a.cfg.Domain+"/dashboard/", nil, h)
+	bts, _, err := a.do(ctx, http.MethodGet, "/dashboard/", nil, h)
 	if err != nil {
 		return fmt.Errorf("do dashboard: %w", err)
 	}
@@ -313,7 +313,7 @@ func (a *API) allBlocksOn(ctx context.Context) error {
 		"users_block":       {"on"},
 	}
 
-	bts, _, err = a.do(ctx, http.MethodPost, "https://"+a.cfg.Domain+"/dashboard/update/", values, h)
+	bts, _, err = a.do(ctx, http.MethodPost, "/dashboard/update/", values, h)
 	if err != nil {
 		return fmt.Errorf("do dashboard update: %w", err)
 	}
@@ -338,9 +338,7 @@ func (a *API) h() http.Header {
 func (a *API) cookies(ctx context.Context) (string, error) {
 	defer trace.StartRegion(ctx, "cookies").End()
 
-	// resp body is already closed
-	// nolint: bodyclose
-	_, resp, err := a.do(ctx, http.MethodGet, "https://"+a.cfg.Domain+"/login/", nil, nil)
+	_, resp, err := a.do(ctx, http.MethodGet, "/login/", nil, nil)
 	if err != nil {
 		return "", fmt.Errorf("do: %w", err)
 	}
@@ -372,7 +370,7 @@ func (a *API) do(
 		rdr = bytes.NewReader([]byte(body.Encode()))
 	}
 
-	req, err = http.NewRequestWithContext(ctx, method, url, rdr)
+	req, err = http.NewRequestWithContext(ctx, method, "https://"+a.cfg.Domain+url, rdr)
 	if err != nil {
 		return nil, nil, fmt.Errorf("new request: %w", err)
 	}
