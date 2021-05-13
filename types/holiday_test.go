@@ -2,6 +2,7 @@ package types_test
 
 import (
 	"bytes"
+	"context"
 	"testing"
 
 	"github.com/kudrykv/vkpm/types"
@@ -20,7 +21,7 @@ func TestNewHolidaysFromHTMLNode(t *testing.T) {
 			{Name: "Fun Day", Date: atDate(holidayLayout, "10 May 2021")},
 		}
 
-		holidays, err := types.NewHolidaysFromHTMLNode(node)
+		holidays, err := types.NewHolidaysFromHTMLNode(context.Background(), node)
 		So(err, ShouldBeNil)
 		So(holidays, ShouldResemble, expected)
 	})

@@ -95,7 +95,7 @@ func Report(p printer.Printer, cfg config.Config, api *services.API) *cli.Comman
 			)
 
 			if entry, err = parseEntry(c, cfg); err != nil {
-				return err
+				return fmt.Errorf("parse entry: %w", err)
 			}
 
 			today := types.Today()
@@ -153,12 +153,12 @@ func parseEntry(c *cli.Context, cfg config.Config) (types.ReportEntry, error) {
 
 	var err error
 	if entry, err = entry.SetActivity(c.String(flagActivity)); err != nil {
-		return entry, fmt.Errorf("test activity: %w", err)
+		return entry, fmt.Errorf("set activity %s: %w", c.String(flagActivity), err)
 	}
 
 	entry.Status = c.Int(flagStatus)
 	if err := entry.TestStatus(); err != nil {
-		return entry, fmt.Errorf("test status: %w", err)
+		return entry, fmt.Errorf("test status %d: %w", c.Int(flagStatus), err)
 	}
 
 	entry.ReportDate = types.Today()
@@ -168,7 +168,7 @@ func parseEntry(c *cli.Context, cfg config.Config) (types.ReportEntry, error) {
 
 	if entry.Span = c.Duration(flagSpan); entry.Span > 0 {
 		if entry.Span != entry.Span.Round(10*time.Minute) {
-			return entry, fmt.Errorf("%v: %w", entry.Span, errBadTime)
+			return entry, fmt.Errorf("span %v: %w", entry.Span, errBadTime)
 		}
 	}
 
@@ -185,11 +185,11 @@ func parseEntry(c *cli.Context, cfg config.Config) (types.ReportEntry, error) {
 	}
 
 	if entry.IsSpanAndRangePresent() {
-		return entry, fmt.Errorf("both range and from-to defined: %w", errRangeOrSpan)
+		return entry, fmt.Errorf("both range and span defined: %w", errRangeOrSpan)
 	}
 
 	if entry.IsSpanAndRangeAbsent() {
-		return entry, fmt.Errorf("no time: %w", errNoTime)
+		return entry, fmt.Errorf("no range nor span defined: %w", errNoTime)
 	}
 
 	return entry, nil

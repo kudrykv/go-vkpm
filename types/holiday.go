@@ -1,11 +1,12 @@
 package types
 
 import (
-	"errors"
+	"context"
 	"fmt"
 	"strings"
 
 	"github.com/antchfx/htmlquery"
+	"github.com/kudrykv/vkpm/th"
 	"golang.org/x/net/html"
 )
 
@@ -55,10 +56,14 @@ func (h Holiday) String() string {
 	return h.Date.String() + " -- " + h.Name
 }
 
-func NewHolidaysFromHTMLNode(doc *html.Node) (Holidays, error) {
-	nodes, err := htmlquery.QueryAll(doc, `//div[@class="holidays_list"]//tbody/tr`)
+func NewHolidaysFromHTMLNode(ctx context.Context, doc *html.Node) (Holidays, error) {
+	_, end := th.RegionTask(ctx, "new holidays from html node")
+	defer end()
+
+	expr := `//div[@class="holidays_list"]//tbody/tr`
+	nodes, err := htmlquery.QueryAll(doc, expr)
 	if err != nil {
-		return nil, fmt.Errorf("query all: %w", err)
+		return nil, fmt.Errorf("query all by %s: %w", expr, err)
 	}
 
 	holidays := make(Holidays, 0, len(nodes))
@@ -66,7 +71,7 @@ func NewHolidaysFromHTMLNode(doc *html.Node) (Holidays, error) {
 	var text string
 
 	for _, node := range nodes {
-		if text, err = getTextFromNode(node, `./td[2]`); err != nil && !errors.Is(err, ErrNodeNotFound) {
+		if text, err = getTextFromNode(node, `./td[2]`); err != nil {
 			return nil, fmt.Errorf("get text from node: %w", err)
 		}
 
@@ -76,7 +81,7 @@ func NewHolidaysFromHTMLNode(doc *html.Node) (Holidays, error) {
 
 		var h Holiday
 		if h.Date, err = ParseDate(`02 January 2006`, text); err != nil {
-			return nil, fmt.Errorf("parse: %w", err)
+			return nil, fmt.Errorf("parse %s: %w", text, err)
 		}
 
 		if h.Name, err = getTextFromNode(node, `./td[3]`); err != nil {

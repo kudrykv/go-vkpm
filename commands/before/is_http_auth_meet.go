@@ -14,7 +14,7 @@ func IsHTTPAuthMeet(cfg config.Config) func(*cli.Context) error {
 		}
 
 		if cfg.Cookies.IsZero() {
-			return fmt.Errorf("no auth: %w", ErrNoCookies)
+			return fmt.Errorf("sign in first: %w", ErrNoCookies)
 		}
 
 		return nil

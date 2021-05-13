@@ -24,7 +24,7 @@ func History(p printer.Printer, cfg config.Config, api *services.API) *cli.Comma
 			today := types.Today()
 			history, err := api.History(ctx, today.Year(), today.Month())
 			if err != nil {
-				return fmt.Errorf("history: %w", err)
+				return fmt.Errorf("history in %d %v: %w", today.Year(), today.Month(), err)
 			}
 
 			p.Println(history)

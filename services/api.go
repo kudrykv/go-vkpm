@@ -181,7 +181,7 @@ func (a *API) VacationsHolidays(ctx context.Context, year int) (types.Vacations,
 		return nil, nil, fmt.Errorf("new vacations from html node: %w", err)
 	}
 
-	holidays, err := types.NewHolidaysFromHTMLNode(doc)
+	holidays, err := types.NewHolidaysFromHTMLNode(ctx, doc)
 	if err != nil {
 		return nil, nil, fmt.Errorf("new holidays from html node: %w", err)
 	}
