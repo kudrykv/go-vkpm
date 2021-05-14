@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strings"
 	"time"
+
+	"github.com/jwalton/gchalk"
 )
 
 type ProjectsHours []ProjectHours
@@ -16,7 +18,9 @@ func (r ProjectsHours) String() string {
 	var ss []string
 
 	for _, ph := range r {
-		ss = append(ss, fmt.Sprintf("%s (%v)", ph.Project.Name, ph.Duration))
+		strDuration := gchalk.Green(strings.ReplaceAll(ph.Duration.String(), "0s", ""))
+		strProject := gchalk.Magenta(ph.Project.Name)
+		ss = append(ss, fmt.Sprintf("%s (%v)", strProject, strDuration))
 	}
 
 	return strings.Join(ss, ", ")
