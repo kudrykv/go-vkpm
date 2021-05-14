@@ -18,13 +18,13 @@ func Vacations(p printer.Printer, cfg config.Config, api *services.API) *cli.Com
 		Usage:  "show requested and approved vacations",
 		Before: before.IsHTTPAuthMeet(cfg),
 		Flags: []cli.Flag{
-			&cli.IntFlag{Name: flagYear, Value: time.Now().Year()},
+			&cli.IntFlag{Name: flagFor, Usage: "year", Value: time.Now().Year()},
 		},
 		Action: func(c *cli.Context) error {
 			ctx, end := th.RegionTask(c.Context, "vacations")
 			defer end()
 
-			paidDays, vacations, _, err := api.VacationsHolidays(ctx, c.Int(flagYear))
+			paidDays, vacations, _, err := api.VacationsHolidays(ctx, c.Int(flagFor))
 			if err != nil {
 				return fmt.Errorf("vacations holidays: %w", err)
 			}

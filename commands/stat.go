@@ -16,16 +16,12 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-const (
-	flagYear = "year"
-)
-
 func Stat(p printer.Printer, cfg config.Config, api *services.API) *cli.Command {
 	return &cli.Command{
 		Name:  "stat",
 		Usage: "show money and hour stat for the given year",
 		Flags: []cli.Flag{
-			&cli.IntFlag{Name: flagYear, Value: time.Now().Year()},
+			&cli.IntFlag{Name: flagFor, Usage: "year", Value: time.Now().Year()},
 		},
 		Before: before.IsHTTPAuthMeet(cfg),
 		Action: func(c *cli.Context) error {
@@ -34,7 +30,7 @@ func Stat(p printer.Printer, cfg config.Config, api *services.API) *cli.Command 
 
 			startMonth := time.January
 			endMonth := time.December
-			year := c.Int(flagYear)
+			year := c.Int(flagFor)
 			now := time.Now()
 
 			if now.Year() < year {
