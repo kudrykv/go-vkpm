@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/antchfx/htmlquery"
+	"github.com/jwalton/gchalk"
 	"github.com/kudrykv/vkpm/th"
 	"golang.org/x/net/html"
 )
@@ -79,10 +80,34 @@ func (e ReportEntries) String() string {
 	groupStrs := make([]string, 0, len(groups))
 
 	for i := len(groups) - 1; i >= 0; i-- {
-		s := groups[i][0].ReportDate.Format("Monday, 2:\n")
+		_, week := groups[i][0].ReportDate.ISOWeek()
+		s := gchalk.WithUnderline().Bold("W"+strconv.Itoa(week)) + ":\n"
 
-		for _, entry := range groups[i] {
-			s += "  " + entry.StringShort() + "\n"
+		gbd := groups[i].GroupByDays()
+		offset := "22"
+		for _, entries := range gbd {
+			if len(entries) > 1 {
+				offset = ""
+
+				break
+			}
+		}
+
+		for j := len(gbd) - 1; j >= 0; j-- {
+			if len(gbd[j]) == 1 {
+				s += fmt.Sprintf(
+					"  %"+offset+"s: %s\n",
+					gchalk.Bold(gbd[j][0].ReportDate.Format("Monday, 02")),
+					gbd[j][0].StringShort(),
+				)
+
+				continue
+			}
+
+			s += "  " + gchalk.Bold(gbd[j][0].ReportDate.Format("Monday, 02:\n"))
+			for _, entry := range gbd[j] {
+				s += "    " + entry.StringShort() + "\n"
+			}
 		}
 
 		groupStrs = append(groupStrs, s)
@@ -162,6 +187,24 @@ func (e ReportEntries) ProjectHours() ProjectsHours {
 }
 
 func (e ReportEntries) GroupByWeeks() []ReportEntries {
+	return e.groupBy(func(l, r Date) bool { return l.EqualWeek(r) })
+}
+
+func (e ReportEntries) Duration() time.Duration {
+	var duration time.Duration
+
+	for _, entry := range e {
+		duration += entry.Span
+	}
+
+	return duration
+}
+
+func (e ReportEntries) GroupByDays() []ReportEntries {
+	return e.groupBy(func(l, r Date) bool { return l.Equal(r) })
+}
+
+func (e ReportEntries) groupBy(cmp func(l, r Date) bool) []ReportEntries {
 	var groups []ReportEntries
 
 	//goland:noinspection GoNilness
@@ -176,7 +219,7 @@ func (e ReportEntries) GroupByWeeks() []ReportEntries {
 		lastGroup := groups[idx]
 		lastEntry := lastGroup[len(lastGroup)-1]
 
-		if lastEntry.ReportDate.Equal(entry.ReportDate) {
+		if cmp(lastEntry.ReportDate, entry.ReportDate) {
 			groups[idx] = append(groups[idx], entry)
 		} else {
 			groups = append(groups, ReportEntries{entry})
@@ -184,16 +227,6 @@ func (e ReportEntries) GroupByWeeks() []ReportEntries {
 	}
 
 	return groups
-}
-
-func (e ReportEntries) Duration() time.Duration {
-	var duration time.Duration
-
-	for _, entry := range e {
-		duration += entry.Span
-	}
-
-	return duration
 }
 
 type ReportEntry struct {
@@ -463,7 +496,9 @@ func (e ReportEntry) IsSame(o ReportEntry) bool {
 }
 
 func (e ReportEntry) StringShort() string {
-	return "#" + e.ID + " " + e.Span.String() + " " + e.Name
+	return fmt.Sprintf("%15s", gchalk.Green(strings.ReplaceAll(e.Span.String(), "0s", ""))) + " " +
+		gchalk.Magenta(e.Project.Name) + " " +
+		strings.ReplaceAll(e.Description, "\n", "/")
 }
 
 func NewReportEntriesFromHTMLNode(ctx context.Context, doc *html.Node) (ReportEntries, error) {

@@ -43,6 +43,13 @@ func (d Date) String() string {
 	return d.Time.Format("Monday 2")
 }
 
+func (d Date) EqualWeek(o Date) bool {
+	lYear, lWeek := d.ISOWeek()
+	rYear, rWeek := o.ISOWeek()
+
+	return lYear == rYear && lWeek == rWeek
+}
+
 func ParseDate(layout, value string) (Date, error) {
 	t, err := time.Parse(layout, value)
 	if err != nil {
