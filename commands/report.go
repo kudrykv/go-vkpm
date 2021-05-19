@@ -163,7 +163,7 @@ func parseEntry(c *cli.Context, cfg config.Config) (types.ReportEntry, error) {
 
 	entry.ReportDate = types.Today()
 	if tmp := c.Timestamp(flagFor); tmp != nil && !tmp.IsZero() {
-		entry.ReportDate = types.Date{Time: *tmp}
+		entry.ReportDate = types.Date{Time: *tmp}.AddDate(types.Today().Year(), 0, 0)
 	}
 
 	if entry.Span = c.Duration(flagSpan); entry.Span > 0 {
