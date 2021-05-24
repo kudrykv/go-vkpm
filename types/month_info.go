@@ -2,6 +2,8 @@ package types
 
 import (
 	"fmt"
+
+	"github.com/jwalton/gchalk"
 )
 
 type MonthInfo struct {
@@ -31,7 +33,7 @@ func (m MonthInfo) String() string {
 	s += fmt.Sprintf("Reported as of today: %.1f / %d\n", m.salary.HoursByCurrDay, wd*8)
 
 	if len(nrep) > 0 {
-		s += fmt.Sprint("Need to report for ", nrep, "\n")
+		s += gchalk.Yellow("Need to report for " + nrep.String() + "\n")
 	}
 
 	if him := m.holidays.InMonth(m.moment); len(him) > 0 {
