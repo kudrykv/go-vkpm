@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"regexp"
 
-	"github.com/kudrykv/go-vkpm/config"
-	"github.com/kudrykv/go-vkpm/th"
+	"github.com/kudrykv/go-vkpm/app/config"
+	"github.com/kudrykv/go-vkpm/app/th"
 	"github.com/urfave/cli/v2"
 )
 

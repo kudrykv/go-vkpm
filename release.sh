@@ -14,7 +14,7 @@ for goos in "${gooses[@]}"; do
       filename=vkpm.exe
     fi
 
-    GOOS=${goos} GOARCH=${goarch} CGO_ENABLED=0 go build -o ${filename}
+    GOOS=${goos} GOARCH=${goarch} CGO_ENABLED=0 go build -o ${filename} cmd/vkpm/vkpm.go
 
     gzip ${filename}
     mv ${filename}.gz vkpm_"${goos}"_"${goarch}"_"${VERSION}".gz

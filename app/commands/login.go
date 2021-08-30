@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/kudrykv/go-vkpm/commands/before"
-	"github.com/kudrykv/go-vkpm/config"
-	"github.com/kudrykv/go-vkpm/printer"
-	"github.com/kudrykv/go-vkpm/services"
-	"github.com/kudrykv/go-vkpm/th"
+	"github.com/kudrykv/go-vkpm/app/commands/before"
+	"github.com/kudrykv/go-vkpm/app/config"
+	"github.com/kudrykv/go-vkpm/app/printer"
+	"github.com/kudrykv/go-vkpm/app/services"
+	"github.com/kudrykv/go-vkpm/app/th"
 	"github.com/urfave/cli/v2"
 	"golang.org/x/term"
 )

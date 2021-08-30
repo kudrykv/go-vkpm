@@ -6,7 +6,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/kudrykv/go-vkpm/config"
+	"github.com/kudrykv/go-vkpm/app/config"
 	. "github.com/smartystreets/goconvey/convey"
 )
 

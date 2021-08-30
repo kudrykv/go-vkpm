@@ -15,9 +15,9 @@ import (
 	"time"
 
 	"github.com/antchfx/htmlquery"
-	"github.com/kudrykv/go-vkpm/config"
-	"github.com/kudrykv/go-vkpm/th"
-	"github.com/kudrykv/go-vkpm/types"
+	"github.com/kudrykv/go-vkpm/app/config"
+	"github.com/kudrykv/go-vkpm/app/th"
+	"github.com/kudrykv/go-vkpm/app/types"
 	"golang.org/x/net/html"
 )
 

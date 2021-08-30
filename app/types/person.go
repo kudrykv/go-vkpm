@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/antchfx/htmlquery"
-	"github.com/kudrykv/go-vkpm/th"
+	"github.com/kudrykv/go-vkpm/app/th"
 	"golang.org/x/net/html"
 )
 
