@@ -6,6 +6,7 @@ require (
 	github.com/antchfx/htmlquery v1.2.3
 	github.com/antchfx/xpath v1.1.10 // indirect
 	github.com/jwalton/gchalk v1.0.3
+	github.com/olekukonko/tablewriter v0.0.5
 	github.com/smartystreets/goconvey v1.6.4
 	github.com/urfave/cli/v2 v2.3.0
 	golang.org/x/net v0.0.0-20200813134508-3edf25e44fcc

@@ -64,6 +64,12 @@ func main() {
 			commands.History(p, cfg, api),
 			commands.Stat(p, cfg, api),
 			commands.Vacations(p, cfg, api),
+			{
+				Name: "users",
+				Subcommands: cli.Commands{
+					commands.UsersBirthdays(cfg, api),
+				},
+			},
 		},
 	}
 

@@ -9,6 +9,7 @@ import (
 
 	"github.com/antchfx/htmlquery"
 	"github.com/kudrykv/go-vkpm/app/th"
+	"github.com/olekukonko/tablewriter"
 	"golang.org/x/net/html"
 )
 
@@ -19,6 +20,10 @@ type Person struct {
 	Name     string
 	Birthday time.Time
 	Team     string
+}
+
+func (p Person) Row() []string {
+	return []string{strconv.Itoa(p.ID), p.Name, p.Team, p.Birthday.Format("Jan _2")}
 }
 
 func NewPersonsFromHTMLNode(ctx context.Context, doc *html.Node) (Persons, error) {
@@ -39,9 +44,8 @@ func NewPersonsFromHTMLNode(ctx context.Context, doc *html.Node) (Persons, error
 
 	persons = make(Persons, 0, len(nodes))
 
-	expr = `./td[1]/a`
-
 	for _, node := range nodes {
+		expr = `./td[1]/a`
 		person := Person{}
 
 		if ptr, err = htmlquery.Query(node, expr); err != nil {
@@ -83,4 +87,19 @@ func NewPersonsFromHTMLNode(ctx context.Context, doc *html.Node) (Persons, error
 	}
 
 	return persons, nil
+}
+
+func (p Persons) String() string {
+	builder := strings.Builder{}
+	table := tablewriter.NewWriter(&builder)
+
+	table.SetHeader([]string{"ID", "Name", "Team", "Birthday"})
+
+	for _, person := range p {
+		table.Append(person.Row())
+	}
+
+	table.Render()
+
+	return builder.String()
 }
