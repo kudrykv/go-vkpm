@@ -241,7 +241,7 @@ func (a *API) Report(ctx context.Context, entry types.ReportEntry) (types.Report
 	return *today, nil
 }
 
-func (a *API) UserInfo(ctx context.Context, id int) (types.Person, error) {
+func (a *API) PersonInfo(ctx context.Context, id int) (types.Person, error) {
 	ctx, end := th.RegionTask(ctx, "user info")
 	defer end()
 

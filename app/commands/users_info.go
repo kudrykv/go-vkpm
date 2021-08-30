@@ -23,9 +23,9 @@ const (
 
 func UsersInfo(cfg config.Config, api *services.API) *cli.Command {
 	var (
-		user types.Person
-		id   int
-		err  error
+		person types.Person
+		id     int
+		err    error
 	)
 
 	return &cli.Command{
@@ -45,15 +45,15 @@ func UsersInfo(cfg config.Config, api *services.API) *cli.Command {
 				return fmt.Errorf("%s: %w", c.String(fID), err)
 			}
 
-			user, err = api.UserInfo(c.Context, id)
+			person, err = api.PersonInfo(c.Context, id)
 			if err != nil {
-				return fmt.Errorf("user info: %w", err)
+				return fmt.Errorf("person info: %w", err)
 			}
 
-			_, _ = fmt.Fprintln(c.App.Writer, user)
+			_, _ = fmt.Fprintln(c.App.Writer, person)
 
 			if c.Bool(fWithPic) {
-				bts, err := api.GetPicture(c.Context, user.PhotoURL)
+				bts, err := api.GetPicture(c.Context, person.PhotoURL)
 				if err != nil {
 					return fmt.Errorf("get picture: %w", err)
 				}

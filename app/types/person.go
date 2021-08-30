@@ -3,6 +3,7 @@ package types
 import (
 	"context"
 	"fmt"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -17,6 +18,7 @@ type Persons []Person
 type Person struct {
 	ID             int
 	URL            string
+	Status         string
 	Name           string
 	Email          string
 	Skype          string
@@ -30,6 +32,32 @@ type Person struct {
 
 func (p Person) Row() []string {
 	return []string{strconv.Itoa(p.ID), p.Name, p.Team, p.Birthday.Format("Jan _2")}
+}
+
+var regexMultiSpace = regexp.MustCompile(`\s+`)
+
+func (p Person) String() string {
+	lines := []string{p.Name}
+
+	if len(p.Status) > 0 {
+		lines[0] += " (" + strings.TrimRight(regexMultiSpace.ReplaceAllString(p.Status, " "), ",") + ")"
+	}
+
+	lines = append(lines, "Team: "+p.Team, "Email: "+p.Email, "Skype: "+p.Skype)
+
+	if len(p.Grade) > 0 {
+		lines = append(lines, "Grade: "+p.Grade)
+	}
+
+	if len(p.EnglishLevel) > 0 {
+		lines = append(lines, "English level: "+p.EnglishLevel)
+	}
+
+	if len(p.EnglishDetails) > 0 {
+		lines = append(lines, "English details: "+p.EnglishDetails)
+	}
+
+	return strings.Join(lines, "\n")
 }
 
 func NewPersonsFromHTMLNode(ctx context.Context, doc *html.Node) (Persons, error) {
@@ -98,6 +126,16 @@ func NewPersonsFromHTMLNode(ctx context.Context, doc *html.Node) (Persons, error
 func NewPersonUserProfileFromHTMLNode(_ context.Context, doc *html.Node) (Person, error) {
 	person := Person{}
 	var err error
+
+	if person.Name, err = getTextFromNode(doc, `//h1`); err != nil {
+		return person, fmt.Errorf("query name: %w", err)
+	} else {
+
+	}
+
+	if person.Status, err = getTextFromNode(doc, `//div[@class="status"]`); err != nil {
+		return person, fmt.Errorf("query status: %w", err)
+	}
 
 	if person.Email, err = getTextFromNode(doc, `//td[contains(., 'Email')]/following-sibling::td`); err != nil {
 		return person, fmt.Errorf("query email: %w", err)
