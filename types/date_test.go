@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kudrykv/vkpm/types"
+	"github.com/kudrykv/go-vkpm/types"
 	. "github.com/smartystreets/goconvey/convey"
 )
 

@@ -1,4 +1,4 @@
-module github.com/kudrykv/vkpm
+module github.com/kudrykv/go-vkpm
 
 go 1.15
 

@@ -6,12 +6,12 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/kudrykv/vkpm/commands/before"
-	"github.com/kudrykv/vkpm/config"
-	"github.com/kudrykv/vkpm/printer"
-	"github.com/kudrykv/vkpm/services"
-	"github.com/kudrykv/vkpm/th"
-	"github.com/kudrykv/vkpm/types"
+	"github.com/kudrykv/go-vkpm/commands/before"
+	"github.com/kudrykv/go-vkpm/config"
+	"github.com/kudrykv/go-vkpm/printer"
+	"github.com/kudrykv/go-vkpm/services"
+	"github.com/kudrykv/go-vkpm/th"
+	"github.com/kudrykv/go-vkpm/types"
 	"github.com/urfave/cli/v2"
 	"golang.org/x/sync/errgroup"
 )

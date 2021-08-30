@@ -3,7 +3,7 @@ package before
 import (
 	"fmt"
 
-	"github.com/kudrykv/vkpm/config"
+	"github.com/kudrykv/go-vkpm/config"
 	"github.com/urfave/cli/v2"
 )
 

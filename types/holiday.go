@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/antchfx/htmlquery"
-	"github.com/kudrykv/vkpm/th"
+	"github.com/kudrykv/go-vkpm/th"
 	"golang.org/x/net/html"
 )
 

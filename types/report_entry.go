@@ -12,7 +12,7 @@ import (
 
 	"github.com/antchfx/htmlquery"
 	"github.com/jwalton/gchalk"
-	"github.com/kudrykv/vkpm/th"
+	"github.com/kudrykv/go-vkpm/th"
 	"golang.org/x/net/html"
 )
 

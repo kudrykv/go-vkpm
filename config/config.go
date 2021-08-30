@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/kudrykv/vkpm/th"
+	"github.com/kudrykv/go-vkpm/th"
 	"gopkg.in/yaml.v3"
 )
 

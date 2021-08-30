@@ -5,7 +5,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/kudrykv/vkpm/types"
+	"github.com/kudrykv/go-vkpm/types"
 	. "github.com/smartystreets/goconvey/convey"
 	"golang.org/x/net/html"
 )
