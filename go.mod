@@ -5,6 +5,7 @@ go 1.15
 require (
 	github.com/antchfx/htmlquery v1.2.3
 	github.com/antchfx/xpath v1.1.10 // indirect
+	github.com/eliukblau/pixterm v1.3.1
 	github.com/jwalton/gchalk v1.0.3
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/smartystreets/goconvey v1.6.4

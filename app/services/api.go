@@ -241,6 +241,34 @@ func (a *API) Report(ctx context.Context, entry types.ReportEntry) (types.Report
 	return *today, nil
 }
 
+func (a *API) UserInfo(ctx context.Context, id int) (types.Person, error) {
+	ctx, end := th.RegionTask(ctx, "user info")
+	defer end()
+
+	node, err := a.doParse(ctx, http.MethodGet, "/dashboard/user_profile/"+strconv.Itoa(id)+"/", nil)
+	if err != nil {
+		return types.Person{}, fmt.Errorf("do parse: %w", err)
+	}
+
+	person, err := types.NewPersonUserProfileFromHTMLNode(ctx, node)
+	if err != nil {
+		return person, fmt.Errorf("new person user profile from html node: %w", err)
+	}
+
+	person.ID = id
+
+	return person, nil
+}
+
+func (a *API) GetPicture(ctx context.Context, uri string) ([]byte, error) {
+	bts, _, err := a.do(ctx, http.MethodGet, uri, nil, a.h())
+	if err != nil {
+		return nil, fmt.Errorf("do: %w", err)
+	}
+
+	return bts, nil
+}
+
 func (a *API) doParse(ctx context.Context, method, url string, body url.Values) (*html.Node, error) {
 	defer trace.StartRegion(ctx, "do and parse").End()
 

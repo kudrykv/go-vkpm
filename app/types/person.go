@@ -15,11 +15,17 @@ import (
 
 type Persons []Person
 type Person struct {
-	ID       int
-	URL      string
-	Name     string
-	Birthday time.Time
-	Team     string
+	ID             int
+	URL            string
+	Name           string
+	Email          string
+	Skype          string
+	Grade          string
+	Birthday       time.Time
+	Team           string
+	EnglishLevel   string
+	EnglishDetails string
+	PhotoURL       string
 }
 
 func (p Person) Row() []string {
@@ -87,6 +93,50 @@ func NewPersonsFromHTMLNode(ctx context.Context, doc *html.Node) (Persons, error
 	}
 
 	return persons, nil
+}
+
+func NewPersonUserProfileFromHTMLNode(_ context.Context, doc *html.Node) (Person, error) {
+	person := Person{}
+	var err error
+
+	if person.Email, err = getTextFromNode(doc, `//td[contains(., 'Email')]/following-sibling::td`); err != nil {
+		return person, fmt.Errorf("query email: %w", err)
+	}
+
+	if person.Skype, err = getTextFromNode(doc, `//td[contains(., 'Skype')]/following-sibling::td`); err != nil {
+		return person, fmt.Errorf("query skype: %w", err)
+	}
+
+	if person.Team, err = getTextFromNode(doc, `//td[contains(., 'Team')]/following-sibling::td`); err != nil {
+		return person, fmt.Errorf("query team: %w", err)
+	}
+
+	if person.Grade, err = getTextFromNode(doc, `//td[contains(., 'Grade')]/following-sibling::td`); err != nil {
+		return person, fmt.Errorf("query grade: %w", err)
+	}
+
+	person.EnglishLevel, err = getTextFromNode(doc, `//td[contains(., 'English Level')]/following-sibling::td`)
+	if err != nil {
+		return person, fmt.Errorf("query english level: %w", err)
+	}
+
+	person.EnglishDetails, err = getTextFromNode(doc, `//td[contains(., 'English Details')]/following-sibling::td`)
+	if err != nil {
+		return person, fmt.Errorf("query english details: %w", err)
+	}
+
+	query, err := htmlquery.Query(doc, `//td[contains(., 'Photo')]/following-sibling::td//img`)
+	if err != nil {
+		return person, fmt.Errorf("query photo src: %w", err)
+	}
+
+	for _, attr := range query.Attr {
+		if attr.Key == "src" {
+			person.PhotoURL = attr.Val
+		}
+	}
+
+	return person, nil
 }
 
 func (p Persons) String() string {

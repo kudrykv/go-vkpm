@@ -68,6 +68,7 @@ func main() {
 				Name: "users",
 				Subcommands: cli.Commands{
 					commands.UsersBirthdays(cfg, api),
+					commands.UsersInfo(cfg, api),
 				},
 			},
 		},
