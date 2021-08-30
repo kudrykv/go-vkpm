@@ -396,16 +396,12 @@ func (e ReportEntry) AlignTimes(history ReportEntries) (ReportEntry, error) {
 }
 
 func (e ReportEntry) String() string {
-	return "" +
-		"Project:     " + e.Project.Name + "\n" +
-		"Report date: " + e.ReportDate.Format("January 2, Monday") + "\n" +
-		"Activity:    " + e.Activity + "\n" +
-		"Status:      " + strconv.Itoa(e.Status) + "\n" +
-		"Time:        " + e.StartTime.Format("15:04") + "-" + e.EndTime.Format("15:04") +
-		" (" + e.Span.String() + ")" + "\n" +
-		"\n" +
-		"Name:        " + e.Name + "\n" +
-		"Desc:        " + e.Description
+	fromTo := e.StartTime.Format("15:04") + "-" + e.EndTime.Format("15:04")
+	repDate := e.ReportDate.Format("January 2, Monday")
+
+	return "Reported " + e.Span.String() + " (" + fromTo + ") for " + e.Project.Name + " to " + repDate + "\n" +
+		strings.Title(e.Activity) + " completed at " + strconv.Itoa(e.Status) + "%\n" +
+		e.Name + ": " + e.Description + "\n"
 }
 
 func (e ReportEntry) Overlaps(o ReportEntry) bool {
