@@ -2,6 +2,7 @@ package types
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/jwalton/gchalk"
 )
@@ -27,10 +28,14 @@ func NewMonthInfo(date Date, s Salary, v Vacations, h Holidays, history ReportEn
 func (m MonthInfo) String() string {
 	him := m.salary.WorkingDaysInMonth * 8
 	wd := len(m.workingDays())
-	nrep := m.needReporting()
+	dead, nrep := m.needReporting()
 
 	s := fmt.Sprintf("Hours in month: %.f (%.f days)\n", him, m.salary.WorkingDaysInMonth)
 	s += fmt.Sprintf("Reported as of today: %.1f / %d\n", m.salary.HoursByCurrDay, wd*8)
+
+	if len(dead) > 0 {
+		s += gchalk.Gray("Missed reporting for " + dead.String() + "\n")
+	}
 
 	if len(nrep) > 0 {
 		s += gchalk.Yellow("Need to report for " + nrep.String() + "\n")
@@ -72,7 +77,7 @@ func (m MonthInfo) workingDays() []Date {
 	return days
 }
 
-func (m MonthInfo) needReporting() Dates {
+func (m MonthInfo) needReporting() (Dates, Dates) {
 	var need Dates
 
 	for _, day := range m.workingDays() {
@@ -83,5 +88,18 @@ func (m MonthInfo) needReporting() Dates {
 		need = append(need, day)
 	}
 
-	return need
+	deadIdx := 0
+	day := time.Now().Day()
+
+	for i := len(need) - 1; i >= 0; i-- {
+		date := need[i]
+
+		if day-date.Day() > 3 {
+			deadIdx = i + 1
+
+			break
+		}
+	}
+
+	return need[:deadIdx], need[deadIdx:]
 }
