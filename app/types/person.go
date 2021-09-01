@@ -191,3 +191,40 @@ func (p Persons) String() string {
 
 	return builder.String()
 }
+
+type PersonFilterType string
+
+const (
+	ByName PersonFilterType = "byName"
+)
+
+type PersonsFilter struct {
+	Type  PersonFilterType
+	Value interface{}
+}
+
+func (p Persons) Filter(f PersonsFilter) Persons {
+	out := make(Persons, 0, len(p))
+
+	var (
+		search string
+		ok     bool
+	)
+
+	for _, person := range p {
+		switch f.Type {
+		case ByName:
+			if search, ok = f.Value.(string); !ok {
+				return out
+			}
+
+			if !strings.Contains(strings.ToLower(person.Name), strings.ToLower(search)) {
+				continue
+			}
+
+			out = append(out, person)
+		}
+	}
+
+	return out
+}

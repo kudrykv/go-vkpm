@@ -2,9 +2,11 @@ package commands
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"image/color"
 	"strconv"
+	"strings"
 
 	"github.com/eliukblau/pixterm/pkg/ansimage"
 	"github.com/kudrykv/go-vkpm/app/commands/before"
@@ -15,34 +17,53 @@ import (
 )
 
 const (
-	fID      = "id"
 	fWithPic = "with-pic"
-	fXSize   = "x"
-	fYSize   = "y"
+	fDim     = "dim"
 )
 
 func UsersInfo(cfg config.Config, api *services.API) *cli.Command {
 	var (
-		person types.Person
-		id     int
-		err    error
+		id      int
+		search  string
+		person  types.Person
+		persons types.Persons
+		err     error
 	)
 
 	return &cli.Command{
-		Name: "info",
+		Name:  "info",
+		Usage: "get more details about the user",
 
 		Flags: []cli.Flag{
-			&cli.StringFlag{Name: fID, Required: true},
-			&cli.BoolFlag{Name: fWithPic},
-			&cli.IntFlag{Name: fXSize, Value: 80},
-			&cli.IntFlag{Name: fYSize, Value: 80},
+			&cli.BoolFlag{Name: fWithPic, Usage: "print user image"},
+			&cli.IntFlag{Name: fDim, Value: 80},
 		},
 
 		Before: before.IsHTTPAuthMeet(cfg),
 
 		Action: func(c *cli.Context) error {
-			if id, err = strconv.Atoi(c.String(fID)); err != nil {
-				return fmt.Errorf("%s: %w", c.String(fID), err)
+			if search = strings.Join(c.Args().Slice(), " "); len(search) == 0 {
+				return errors.New("specify user id or name")
+			}
+
+			if id, err = strconv.Atoi(search); err != nil {
+				if persons, err = api.Birthdays(c.Context); err != nil {
+					return fmt.Errorf("birthdays %s: %w", search, err)
+				}
+
+				persons = persons.Filter(types.PersonsFilter{Type: types.ByName, Value: search})
+
+				if len(persons) == 0 {
+					return fmt.Errorf("%s: %w", search, errors.New("no one found"))
+				}
+
+				if len(persons) > 1 {
+					_, _ = fmt.Fprintln(c.App.Writer, persons)
+
+					return fmt.Errorf("%s: %w", search, errors.New("found multiple users"))
+				}
+
+				id = persons[0].ID
 			}
 
 			person, err = api.PersonInfo(c.Context, id)
@@ -58,11 +79,10 @@ func UsersInfo(cfg config.Config, api *services.API) *cli.Command {
 					return fmt.Errorf("get picture: %w", err)
 				}
 
-				x := c.Int(fXSize)
-				y := c.Int(fYSize)
+				dim := c.Int(fDim)
 				reader := bytes.NewReader(bts)
 				bg := color.Black
-				ansImage, err := ansimage.NewScaledFromReader(reader, y, x, bg, ansimage.ScaleModeFit, ansimage.NoDithering)
+				ansImage, err := ansimage.NewScaledFromReader(reader, dim, dim, bg, ansimage.ScaleModeFit, ansimage.NoDithering)
 
 				if err != nil {
 					return fmt.Errorf("image from url: %w", err)

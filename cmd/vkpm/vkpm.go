@@ -55,7 +55,7 @@ func main() {
 	app := &cli.App{
 		Name:    "vkpm",
 		Usage:   "cli tool to avoid clicking through VKPM UI",
-		Version: "0.0.5",
+		Version: "0.0.6",
 		Commands: []*cli.Command{
 			commands.Config(cfg),
 			commands.Login(p, cfg, api),
@@ -65,9 +65,10 @@ func main() {
 			commands.Stat(p, cfg, api),
 			commands.Vacations(p, cfg, api),
 			{
-				Name: "users",
+				Name:  "users",
+				Usage: "search and get detailed info about users",
 				Subcommands: cli.Commands{
-					commands.UsersBirthdays(cfg, api),
+					commands.UsersSearch(cfg, api),
 					commands.UsersInfo(cfg, api),
 				},
 			},

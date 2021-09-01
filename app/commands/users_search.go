@@ -26,14 +26,20 @@ const (
 	byBirthday = "bday"
 )
 
-func UsersBirthdays(cfg config.Config, api *services.API) *cli.Command {
+func UsersSearch(cfg config.Config, api *services.API) *cli.Command {
 	return &cli.Command{
-		Name: "birthdays",
+		Name:  "search",
+		Usage: "",
 
 		Flags: []cli.Flag{
-			&cli.StringFlag{Name: fSortBy, Value: byName},
-			&cli.StringFlag{Name: fTeam},
-			&cli.StringFlag{Name: fName},
+			&cli.StringFlag{
+				Name:  fSortBy,
+				Value: byName,
+				Usage: strings.Join([]string{byID, byName, byTeam, byBirthday}, ", ") + "; comma-separated to sort by " +
+					"multiple fields",
+			},
+			&cli.StringFlag{Name: fTeam, Usage: "filter by team name"},
+			&cli.StringFlag{Name: fName, Usage: "filter by user name"},
 		},
 
 		Before: before.IsHTTPAuthMeet(cfg),
