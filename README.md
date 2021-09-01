@@ -3,6 +3,15 @@
 CLI tool that allows time report and get some stats without getting into
 the VKPM UI.
 
+## Install
+
+You can either download a binary from the latest release, or get it with Go:
+```shell
+GO111MODULE=on go get github.com/kudrykv/go-vkpm/cmd/vkpm
+```
+
+## Usage
+
 First you need to config the domain for communication and log in:
 ```shell
 $ vkpm config --domain vkpm-domain
