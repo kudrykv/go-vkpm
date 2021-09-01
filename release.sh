@@ -2,7 +2,7 @@
 
 set -e
 
-VERSION=${VERSION:-undefined}
+VERSION=${VERSION:-$(go run cmd/vkpm/vkpm.go | grep -A 1 VERSION | tail -n 1 | xargs)}
 
 gooses=(darwin linux windows)
 goarches=(amd64)
@@ -20,4 +20,3 @@ for goos in "${gooses[@]}"; do
     mv ${filename}.gz vkpm_"${goos}"_"${goarch}"_"${VERSION}".gz
   done
 done
-
