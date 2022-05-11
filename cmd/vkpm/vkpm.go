@@ -54,24 +54,16 @@ func main() {
 	)
 
 	client, err := littlehttp.New(littlehttp.Parameters{
-		Client:    httpClient,
-		URLPrefix: "https://" + cfg.Domain,
-		Marshaller: func(src any) (string, []byte, error) {
-			if values, ok := src.(url.Values); ok {
-				return "application/x-www-form-urlencoded", []byte(values.Encode()), nil
-			}
-
-			bts, err := json.Marshal(src)
-
-			return "application/json", bts, err
-		},
+		Client:     httpClient,
+		URLPrefix:  "https://" + cfg.Domain,
+		Marshaller: marshaller,
 	})
 
 	if shouldExit(ctx, "littlehttp.New: %w", err) {
 		return
 	}
 
-	api := services.NewAPI(client, httpClient, cfg).WithCookies(cfg.Cookies)
+	api := services.NewAPI(client, cfg).WithCookies(cfg.Cookies)
 
 	app := &cli.App{
 		Name:    "vkpm",
@@ -168,4 +160,14 @@ func printErr(ctx context.Context, msg string, err error) {
 
 	fmt.Print(strings.Repeat(" ", indent))
 	fmt.Println(b.Error())
+}
+
+func marshaller(src any) (string, []byte, error) {
+	if values, ok := src.(url.Values); ok {
+		return "application/x-www-form-urlencoded", []byte(values.Encode()), nil
+	}
+
+	bts, err := json.Marshal(src)
+
+	return "application/json", bts, err
 }

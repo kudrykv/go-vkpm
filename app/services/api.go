@@ -21,7 +21,6 @@ import (
 )
 
 type API struct {
-	hc  *http.Client
 	cfg config.Config
 	c   config.Cookies
 
@@ -40,10 +39,9 @@ var (
 	ErrNoReport  = errors.New("no report found")
 )
 
-func NewAPI(littleHTTP *littlehttp.LittleHTTP, hc *http.Client, cfg config.Config) *API {
+func NewAPI(littleHTTP *littlehttp.LittleHTTP, cfg config.Config) *API {
 	return &API{
 		littleHTTP: littleHTTP,
-		hc:         hc,
 		cfg:        cfg,
 		mux:        &sync.Mutex{},
 		sem:        make(chan struct{}, 4),
