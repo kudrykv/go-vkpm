@@ -21,12 +21,12 @@ import (
 )
 
 type API struct {
-	cfg config.Config
-	c   config.Cookies
+	cfg     config.Config
+	cookies config.Cookies
 
 	blocksOn   bool
-	mux        *sync.Mutex
-	sem        chan struct{}
+	mutex      *sync.Mutex
+	semaphore  chan struct{}
 	littleHTTP *littlehttp.LittleHTTP
 }
 
@@ -43,13 +43,13 @@ func NewAPI(littleHTTP *littlehttp.LittleHTTP, cfg config.Config) *API {
 	return &API{
 		littleHTTP: littleHTTP,
 		cfg:        cfg,
-		mux:        &sync.Mutex{},
-		sem:        make(chan struct{}, 4),
+		mutex:      &sync.Mutex{},
+		semaphore:  make(chan struct{}, 4),
 	}
 }
 
 func (a *API) WithCookies(c config.Cookies) *API {
-	a.c = c
+	a.cookies = c
 	return a
 }
 
@@ -57,7 +57,7 @@ func (a *API) Login(ctx context.Context, username, password string) (config.Cook
 	ctx, end := th.RegionTask(ctx, "login")
 	defer end()
 
-	csrf, err := a.cookies(ctx)
+	csrf, err := a.getCookies(ctx)
 	if err != nil {
 		return config.Cookies{}, fmt.Errorf("cookies: %w", err)
 	}
@@ -299,8 +299,8 @@ func (a *API) doParse(ctx context.Context, method, url string, body url.Values) 
 func (a *API) allBlocksOn(ctx context.Context) error {
 	defer trace.StartRegion(ctx, "enable all blocks").End()
 
-	a.mux.Lock()
-	defer a.mux.Unlock()
+	a.mutex.Lock()
+	defer a.mutex.Unlock()
 
 	trace.Logf(ctx, "vars", "blocksOn=%v", a.blocksOn)
 	if a.blocksOn {
@@ -363,13 +363,13 @@ func (a *API) allBlocksOn(ctx context.Context) error {
 
 func (a *API) h() http.Header {
 	return http.Header{
-		"Cookie":      {"csrftoken=" + a.c.CSRFToken + "; sessionid=" + a.c.SessionID},
+		"Cookie":      {"csrftoken=" + a.cookies.CSRFToken + "; sessionid=" + a.cookies.SessionID},
 		"Referer":     {"https://" + a.cfg.Domain + "/dashboard/"},
-		"x-csrftoken": {a.c.CSRFToken},
+		"x-csrftoken": {a.cookies.CSRFToken},
 	}
 }
 
-func (a *API) cookies(ctx context.Context) (string, error) {
+func (a *API) getCookies(ctx context.Context) (string, error) {
 	defer trace.StartRegion(ctx, "cookies").End()
 
 	_, resp, err := a.do(ctx, http.MethodGet, "/login/", nil, nil)
@@ -393,8 +393,8 @@ func (a *API) do(
 
 	trace.Logf(ctx, "httpreq", "method: %v, url: %v", method, url)
 
-	a.sem <- struct{}{}
-	defer func() { <-a.sem }()
+	a.semaphore <- struct{}{}
+	defer func() { <-a.semaphore }()
 
 	if h == nil {
 		h = http.Header{}
