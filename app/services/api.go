@@ -5,8 +5,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"runtime/trace"
@@ -18,6 +16,7 @@ import (
 	"github.com/kudrykv/go-vkpm/app/config"
 	"github.com/kudrykv/go-vkpm/app/th"
 	"github.com/kudrykv/go-vkpm/app/types"
+	"github.com/kudrykv/littlehttp"
 	"golang.org/x/net/html"
 )
 
@@ -26,9 +25,10 @@ type API struct {
 	cfg config.Config
 	c   config.Cookies
 
-	blocksOn bool
-	mux      *sync.Mutex
-	sem      chan struct{}
+	blocksOn   bool
+	mux        *sync.Mutex
+	sem        chan struct{}
+	littleHTTP *littlehttp.LittleHTTP
 }
 
 var (
@@ -40,8 +40,14 @@ var (
 	ErrNoReport  = errors.New("no report found")
 )
 
-func NewAPI(hc *http.Client, cfg config.Config) *API {
-	return &API{hc: hc, cfg: cfg, mux: &sync.Mutex{}, sem: make(chan struct{}, 4)}
+func NewAPI(littleHTTP *littlehttp.LittleHTTP, hc *http.Client, cfg config.Config) *API {
+	return &API{
+		littleHTTP: littleHTTP,
+		hc:         hc,
+		cfg:        cfg,
+		mux:        &sync.Mutex{},
+		sem:        make(chan struct{}, 4),
+	}
 }
 
 func (a *API) WithCookies(c config.Cookies) *API {
@@ -392,48 +398,23 @@ func (a *API) do(
 	a.sem <- struct{}{}
 	defer func() { <-a.sem }()
 
-	var (
-		req *http.Request
-		err error
-		rdr io.Reader
-	)
-
-	if body != nil {
-		rdr = bytes.NewReader([]byte(body.Encode()))
+	if h == nil {
+		h = http.Header{}
 	}
 
-	req, err = http.NewRequestWithContext(ctx, method, "https://"+a.cfg.Domain+url, rdr)
-	if err != nil {
-		return nil, nil, fmt.Errorf("new request: %w", err)
+	if len(h.Get("Referer")) == 0 {
+		h.Set("Referer", "https://"+a.cfg.Domain+"/login/")
 	}
 
-	for k, v := range h {
-		for _, s := range v {
-			req.Header.Add(k, s)
-		}
-	}
-
-	if len(req.Header.Get("Referer")) == 0 {
-		req.Header.Set("Referer", "https://"+a.cfg.Domain+"/login/")
-	}
-
-	if rdr != nil {
-		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-	}
-
-	resp, err := a.hc.Do(req)
+	resp, err := a.littleHTTP.Do(ctx, littlehttp.NewRequest(method, url, h, body))
 	if err != nil {
 		return nil, nil, fmt.Errorf("do: %w", err)
 	}
 
-	bts, err := ioutil.ReadAll(resp.Body)
+	bts, err := resp.Bytes()
 	if err != nil {
-		return nil, nil, fmt.Errorf("read all: %w", err)
+		return nil, nil, fmt.Errorf("bytes: %w", err)
 	}
 
-	if err = resp.Body.Close(); err != nil {
-		return nil, nil, fmt.Errorf("close: %w", err)
-	}
-
-	return bts, resp, nil
+	return bts, resp.Raw(), nil
 }

@@ -2,9 +2,11 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
+	"net/url"
 	"os"
 	"runtime/trace"
 	"strings"
@@ -14,6 +16,7 @@ import (
 	"github.com/kudrykv/go-vkpm/app/config"
 	"github.com/kudrykv/go-vkpm/app/printer"
 	"github.com/kudrykv/go-vkpm/app/services"
+	"github.com/kudrykv/littlehttp"
 	"github.com/urfave/cli/v2"
 )
 
@@ -50,7 +53,25 @@ func main() {
 		}
 	)
 
-	api := services.NewAPI(httpClient, cfg).WithCookies(cfg.Cookies)
+	client, err := littlehttp.New(littlehttp.Parameters{
+		Client:    httpClient,
+		URLPrefix: "https://" + cfg.Domain,
+		Marshaller: func(src any) (string, []byte, error) {
+			if values, ok := src.(url.Values); ok {
+				return "application/x-www-form-urlencoded", []byte(values.Encode()), nil
+			}
+
+			bts, err := json.Marshal(src)
+
+			return "application/json", bts, err
+		},
+	})
+
+	if shouldExit(ctx, "littlehttp.New: %w", err) {
+		return
+	}
+
+	api := services.NewAPI(client, httpClient, cfg).WithCookies(cfg.Cookies)
 
 	app := &cli.App{
 		Name:    "vkpm",
