@@ -85,6 +85,12 @@ func main() {
 					commands.UsersInfo(cfg, api),
 				},
 			},
+			{
+				Name: "projects",
+				Subcommands: cli.Commands{
+					commands.ProjectsList(cfg, api),
+				},
+			},
 		},
 	}
 
