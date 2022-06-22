@@ -119,15 +119,15 @@ func NewSalaryFromHTMLNode(ctx context.Context, doc *html.Node, year int, month 
 	}{
 		{&salary.RatePerHour, `//td[contains(., "rate per hour:")]`},
 		{&salary.Rate, `//td[contains(., "rate:")]`},
-		{&salary.WorkingDaysInMonth, `//td[. = "Working days in month:"]/following-sibling::td[1]`},
-		{&salary.HoursByCurrDay, `//td[. = "Hours By Current Day"]/following-sibling::td[1]`},
-		{&salary.DollarsByCurrDay, `//td[. = "Hours By Current Day"]/following-sibling::td[2]`},
+		{&salary.WorkingDaysInMonth, `//td[contains(., "Working days")]/following-sibling::td[1]`},
+		{&salary.HoursByCurrDay, `//td[. = "Hours by the Current Day"]/following-sibling::td[1]`},
+		{&salary.DollarsByCurrDay, `//td[. = "Hours by the Current Day"]/following-sibling::td[2]`},
 		{&salary.ExpectedSalary, `//td[. = "Expected Salary"]/following-sibling::td[2]`},
-		{&salary.VacationHours, `//td[. = "Vacations"]/following-sibling::td[1]`},
-		{&salary.VacationDollars, `//td[. = "Vacations"]/following-sibling::td[2]`},
-		{&salary.OvertimeHours, `//td[. = "Overtimes"]/following-sibling::td[1]`},
-		{&salary.OvertimeDollars, `//td[. = "Overtimes"]/following-sibling::td[2]`},
-		{&salary.BonusDollars, `//td[. = "Bonuses"]/following-sibling::td[2]`},
+		{&salary.VacationHours, `//td[contains(., "Vacation")]/following-sibling::td[1]`},
+		{&salary.VacationDollars, `//td[contains(., "Vacations")]/following-sibling::td[2]`},
+		{&salary.OvertimeHours, `//td[contains(., "Overtime")]/following-sibling::td[1]`},
+		{&salary.OvertimeDollars, `//td[contains(., "Overtime")]/following-sibling::td[2]`},
+		{&salary.BonusDollars, `//td[contains(., "Bonus")]/following-sibling::td[2]`},
 	}
 
 	for _, kv := range iter {
