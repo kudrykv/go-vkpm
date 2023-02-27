@@ -7,7 +7,7 @@ the VKPM UI.
 
 You can either download a binary from the latest release, or get it with Go:
 ```shell
-go install github.com/kudrykv/go-vkpm/cmd/vkpm@latest
+go install github.com/kudrykv/go-vkpm/cmd/vkpm@v0.0.9
 ```
 
 ## Usage
