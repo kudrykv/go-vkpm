@@ -175,7 +175,7 @@ func (a *API) VacationsHolidays(ctx context.Context, year int) (int, types.Vacat
 
 	body := url.Values{"year": {strconv.Itoa(year)}, "year_changed": {"true"}}
 
-	doc, err := a.doParse(ctx, http.MethodPost, "/vacations/", body)
+	doc, err := a.doParse(ctx, http.MethodPost, "/breaks/", body)
 	if err != nil {
 		return 0, nil, nil, fmt.Errorf("do parse: %w", err)
 	}
